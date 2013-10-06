@@ -41,6 +41,8 @@
 ;;; Change Log:
 ;; 0.1a - 20131005 - Created File.
 ;;; Code:
+(eval-when-compile (require 'tex))
+(eval-when-compile (require 'latex))
 
 (defconst latex-extra-version "0.1a" "Version of the latex-extra.el package.")
 (defconst latex-extra-version-int 1 "Version of the latex-extra.el package, as an integer.")
@@ -55,6 +57,7 @@
   (interactive)
   (customize-group 'latex-extra t))
 
+;;; Whitespace cleaning
 (defcustom latex/clean-up-whitespace t
   "What type of whitespace will be erased by the function `latex/clean-fill-indent-environment'.
 
@@ -63,14 +66,14 @@ two or more consecutive blank lines they are turned into one, and
 single blank lines are left untouched.
 
 This variable has 4 possible values:
-t:       Erase blank lines and spaces. 
-'lines:  Erase blank lines only. 
-'spaces: Erase spaces only. 
-nil:     Don't erase any whitespace."
-  :type '(choice (const :tag "Erase blank lines and spaces." t)
-                 (const :tag "Erase blank lines only." lines)
-                 (const :tag "Erase spaces only." spaces)
-                 (const :tag "Don't erase any whitespace." nil))
+t:       Erases blank lines and spaces. 
+'lines:  Erases blank lines only. 
+'spaces: Erases spaces only. 
+nil:     Doesn't erase any whitespace."
+  :type '(choice (const :tag "Erases blank lines and spaces." t)
+                 (const :tag "Erases blank lines only." lines)
+                 (const :tag "Erases spaces only." spaces)
+                 (const :tag "Doesn't erase any whitespace." nil))
   :group 'latex-extra
   :package-version '(latex-extra . "0.1a"))
 
@@ -116,25 +119,30 @@ Performs the following actions (on current environment):
       (indent-region l r)))
   (message "Done."))
 
-(defun always-t (&rest dummy)
-  "Take any number of arguments and return t."
-  t)
+;;; Section navigation
+(defcustom latex/section-hierarchy '("\\headerbox"
+                                     "\\subparagraph"
+                                     "\\paragraph"
+                                     "\\subsubsection"
+                                     "\\subsection"
+                                     "\\section"
+                                     "\\chapter"
+                                     "\\part"
+                                     "\\maketitle"
+                                     "\\documentclass")
+  "List of strings which define what a section can be."
+  :type '(repeat string)
+  :group 'latex-functions
+  :package-version '(latex-functions . ""))
+
+(defun always-t (&rest x) "Return t." t)
 
 (defun latex/next-section (n)
   "Move N (or 1) headers forward, where header stands for anything in the variable `latex/section-hierarchy'.
 
 Negative N goes backward."
   (interactive "p")
-  (latex//find-nth-section-with-predicate n 'always-t)
-  ;; (let ((dest
-  ;;        (save-match-data
-  ;;          (save-excursion
-  ;;            (unless (eobp) (forward-char 1))
-  ;;            (when (search-forward-regexp (latex/section-regexp) nil :noerror n)
-  ;;              (match-beginning 0))))))
-  ;;   (if dest (goto-char dest)
-  ;;     (message "Reached the %s." (if (> n 0) "bottom" "top"))))
-  )
+  (goto-char (latex//find-nth-section-with-predicate n 'always-t)))
 
 (defun latex/previous-section (n)
   "Move N (or 1) headers backward, where header stands for anything in the variable `latex/section-hierarchy'."
@@ -147,9 +155,25 @@ Negative N goes backward."
   (goto-char (latex//find-nth-section-with-predicate (- n) 'latex/section<)))
 
 (defun latex/next-section-same-level (n)
-  "Move N (or 1) headers forward, where header stands for the current level of anything in the variable `latex/section-hierarchy'."
+  "Move N (or 1) headers forward, where header stands for the current level of anything in the variable `latex/section-hierarchy'.
+
+Negative N goes backward."
   (interactive "p")
   (goto-char (latex//find-nth-section-with-predicate n 'latex/section<=)))
+
+(defun latex/previous-section-same-level (n)
+  "Move N (or 1) headers backward, where header stands for the current level of anything in the variable `latex/section-hierarchy'."
+  (interactive "p")
+  (latex/next-section-same-level (- n)))
+
+(defun latex//impl-previous-section ()
+  (let ((dest
+         (save-match-data
+           (save-excursion
+             (when (looking-at "\\\\") (forward-char 1))
+             (when (search-forward-regexp (latex/section-regexp) nil :noerror -1)
+               (match-beginning 0))))))
+    (if dest (goto-char dest) nil)))
 
 (defun latex//find-nth-section-with-predicate (n pred)
   "Find the next (or previous) N headers satisfying predicate PRED, return a marker at the start of the last match.
@@ -176,31 +200,30 @@ determined by the positivity of N.
          (amount (* n direction))
          (sap (thing-at-point 'symbol)) ;symbol at point
          (is-on-header-p (and (stringp sap)
-                              (string-match (latex/section-regexp) sap))))
-    (save-match-data
-      (save-excursion
-        (if (or is-on-header-p (latex/next-section -1))
-            (progn
-              (setq sap (thing-at-point 'symbol))
-              (when (looking-at "\\\\")
-                (unless (eobp) (forward-char 1)))
-              (while (and (> amount 0)
-                          (search-forward-regexp (latex/section-regexp) nil :noerror direction))
-                (save-match-data
-                  (when (eval (list pred sap (thing-at-point 'symbol)))
+                              (string-match (latex/section-regexp) sap)))
+         (result
+          (save-match-data
+            (save-excursion
+              (if (or is-on-header-p (latex//impl-previous-section))
+                  (progn
                     (setq sap (thing-at-point 'symbol))
-                    (decf amount))))
-              (if (= amount n)
-                  (message "No sections %s! (of the desired level)" (if (> direction 0) "below" "above"))
-                (unless (= amount 0) (message "Reached the %s." (if (> direction 0) "bottom" "top")))
-                (push-mark)
-                (match-beginning 0)))
-          (message "Not inside a header."))))))
-
-(defun latex/previous-section-same-level (n)
-  "Move N (or 1) headers backward, where header stands for the current level of anything in the variable `latex/section-hierarchy'."
-  (interactive "p")
-  (latex/next-section-same-level (- n)))
+                    (when (looking-at "\\\\")
+                      (unless (eobp) (forward-char 1)))
+                    (while (and (> amount 0)
+                                (search-forward-regexp (latex/section-regexp) nil :noerror direction))
+                      (save-match-data
+                        (when (eval (list pred sap (thing-at-point 'symbol)))
+                          (setq sap (thing-at-point 'symbol))
+                          (decf amount))))
+                    (if (= amount n)
+                        (message "No sections %s! (of the desired level)" (if (> direction 0) "below" "above"))
+                      (unless (= amount 0) (message "Reached the %s." (if (> direction 0) "bottom" "top")))
+                      (push-mark)
+                      (match-beginning 0)))
+                (message "Not inside a header."))))))
+    (if (null (number-or-marker-p result)) (point)
+      (push-mark)
+      result)))
 
 (defun latex/section<= (x y)
   "t if Y comes after (or is equal to) X in `latex/section-hierarchy'."
@@ -209,21 +232,6 @@ determined by the positivity of N.
 (defun latex/section< (x y)
   "t if Y comes after X in `latex/section-hierarchy'."
   (member y (cdr-safe (member x latex/section-hierarchy))))
-
-(defcustom latex/section-hierarchy '("\\headerbox"
-                                     "\\subparagraph"
-                                     "\\paragraph"
-                                     "\\subsubsection"
-                                     "\\subsection"
-                                     "\\section"
-                                     "\\chapter"
-                                     "\\part"
-                                     "\\maketitle"
-                                     "\\documentclass")
-  "List of strings which define what a section can be."
-  :type '(repeat string)
-  :group 'latex-functions
-  :package-version '(latex-functions . ""))
 
 (defun latex/section-regexp ()
   "Return a regexp matching anything in `latex/section-hierarchy'."
@@ -237,6 +245,7 @@ determined by the positivity of N.
     (when (= bef (point))
       (beginning-of-line))))
 
+;;; Autofilling
 (defcustom latex/no-autofill-environments
   '("equation" "multline" "align" "aligned" "table" "split" "eqnarray")
   "A list of LaTeX environment names in which `auto-fill-mode' should be inhibited."
@@ -271,7 +280,7 @@ used to fill a paragraph to `latex/auto-fill-function'."
   (setq auto-fill-function 'latex/auto-fill-function))
 
 (defvar latex/sentinel nil)
-(defvar latex/count-same-command nil)
+(defvar latex/count-same-command 0)
 (defvar latex/last-command nil)
 
 (defcustom latex/view-after-compile t
@@ -297,7 +306,7 @@ used to fill a paragraph to `latex/auto-fill-function'."
                               (list name)
                               TeX-file-extensions)
            (TeX-save-document (TeX-master-file)))
-         latex/command-default)
+         TeX-command-default)
         ((and (memq major-mode '(doctex-mode latex-mode))
               (TeX-check-files (concat name ".bbl")
                                (mapcar 'car
@@ -340,7 +349,8 @@ If there is still something left do do start the next latex-command."
         (message "latex/do-compile: Did %s %d times." latex/last-command latex/count-same-command)
         (setq latex/count-same-command 1))
       (if (>= latex/count-same-command latex/max-runs-same-command)
-          (message "latex/do-compile: Did %S already %d times. Don't want to do it anymore." latex/last-command latex/count-same-command)
+          (error "latex/do-compile: Did %s already %d times. Something might be wrong, so I'll stop now."
+                   latex/last-command latex/count-same-command)
         (setq latex/count-same-command (1+ latex/count-same-command))
         (setq latex/last-command nextCmd)
         (and (null (equal nextCmd TeX-command-Show))
@@ -387,10 +397,6 @@ to \"\"), so it will be up to you to bind it something else."
     (define-key LaTeX-mode-map "" 'latex/previous-section)
     (define-key LaTeX-mode-map "p"  'preview-map)))
 
-;;;###autoload
-(eval-after-load 'latex
-  (latex/setup-keybinds))
-
 (defun latex/setup-keybinds ()
   "Define our keybinds."
   (interactive)
@@ -398,12 +404,17 @@ to \"\"), so it will be up to you to bind it something else."
   (define-key LaTeX-mode-map "" 'latex/do-compile)
   (define-key LaTeX-mode-map "" 'latex/compile-commands-until-done)
   (define-key LaTeX-mode-map "" 'latex/clean-fill-indent-environment)
+  (define-key LaTeX-mode-map "" 'latex/up-section)
   (define-key LaTeX-mode-map "" 'latex/next-section)
   (define-key LaTeX-mode-map "" 'latex/next-section-same-level)
   (define-key LaTeX-mode-map "" 'latex/previous-section-same-level)
   (when latex/override-preview-map
     (define-key LaTeX-mode-map "" 'latex/previous-section)
-    (define-key LaTeX-mode-map "p"  'preview-map))
-  )
+    (define-key LaTeX-mode-map "p"  'preview-map)))
+
+;;;###autoload
+(eval-after-load 'latex
+  (latex/setup-keybinds))
+
 (provide 'latex-extra)
 ;;; latex-extra.el ends here.
