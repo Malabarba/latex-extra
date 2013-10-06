@@ -4,8 +4,8 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 0.1a
-;; Keywords: 
+;; Version: 1.0
+;; Keywords:
 ;; Prefix: latex
 ;; Separator: /
 
@@ -16,7 +16,7 @@
 ;; 
 ;; # 1-Key Compilation #
 ;; 
-;; Tired of hitting `C-c C-c' 4 times (latex, bibtex, latex, view) for
+;; Tired of hitting `C-c C-c' 4 times (Latex, BibTeX, Latex, View) for
 ;; the document to compile? This defines a much needed command that does
 ;; **everything** at once, and even handles compilation errors!
 ;; 
@@ -24,36 +24,36 @@
 ;; 
 ;; # Navigating Sections #
 ;; 
-;; Five new keybindings are defined for navigating between
+;; Five new key bindings are defined for navigating between
 ;; sections/chapters. These are meant to be intuitive to people familiar
 ;; with `org-mode'.
 ;; 
-;; - `C-c C-n' **=>** `latex/next-section'  
+;; - `C-c C-n' **=>** `latex/next-section'
 ;; Goes forward to the next section-like command in the buffer (\part,
 ;; \chapter, \(sub)section, or \(sub)paragraph, whichever comes first).
-;; - `C-c C-p' **=>** `latex/previous-section'  
+;; - `C-c C-p' **=>** `latex/previous-section'
 ;; Same, but goes backward.
-;; - `C-c C-u' **=>** `latex/up-section'  
+;; - `C-c C-u' **=>** `latex/up-section'
 ;; Goes backward to the previous section-like command containing this
 ;; one. For instance, if you're inside a subsection it goes up to the
 ;; section that contains it.
-;; - `C-c C-f' **=>** `latex/next-section-same-level'  
+;; - `C-c C-f' **=>** `latex/next-section-same-level'
 ;; Like next-section, except it skips anything that's "lower-level" then
 ;; the current one. For instance, if you're inside a subsection it finds
 ;; the next subsection (or higher), skipping any subsubsections or
 ;; paragraphs.
-;; - `C-c C-b' **=>** `latex/previous-section-same-level'  
+;; - `C-c C-b' **=>** `latex/previous-section-same-level'
 ;; Same, but goes backward.
 ;; 
-;; # Whitespace Handling #
+;; # White-space Handling #
 ;; 
 ;; `latex-extra.el' improves `auto-fill-mode' so that it only applies to
 ;; text, not equations. To use this improvement, just activate
 ;; `auto-fill-mode' as usual.
 ;; 
-;; It also defines a new command:  
+;; It also defines a new command:
 ;; 
-;; - `C-c C-q' **=>** `latex/clean-fill-indent-environment'  
+;; - `C-c C-q' **=>** `latex/clean-fill-indent-environment'
 ;; Completely cleans up the entire current environment. This involves:
 ;; 
 ;; 1. Removing extraneous spaces and blank lines.
@@ -92,53 +92,54 @@
 (eval-when-compile (require 'tex))
 (eval-when-compile (require 'latex))
 
-(defconst latex-extra-version "0.1a" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 1 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.0" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 2 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
-  "Opens github issues page in a web browser. Please send me any bugs you find, and please inclue your emacs and latex versions."
+  "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
   (message "Your latex-version is: %s, and your emacs version is: %s.\nPlease include this in your report!"
            latex-extra-version emacs-version)
   (browse-url "https://github.com/BruceConnor/latex-extra/issues/new"))
 (defun latex-customize ()
-  "Open the customization menu in the `latex-extra' group."
+  "Open the customisation menu in the `latex-extra' group."
   (interactive)
   (customize-group 'latex-extra t))
 
 ;;; Implementation
 (defun replace-regexp-everywhere (reg rep &optional start end)
-  "Version of replace-regexp usable in lisp code."
+  "Version of `replace-regexp' usable in lisp code."
   (goto-char (or start (point-min)))
   (while (re-search-forward reg end t)
     (replace-match rep nil nil)))
+(defun always-t (&rest x) "Return t." t)
 
 ;;; Whitespace cleaning
 (defcustom latex/clean-up-whitespace t
-  "What type of whitespace will be erased by the function `latex/clean-fill-indent-environment'.
+  "Type of whitespace to be erased by `latex/clean-fill-indent-environment'.
 
 Only excessive whitespace will be erased. That is, when there are
 two or more consecutive blank lines they are turned into one, and
 single blank lines are left untouched.
 
 This variable has 4 possible values:
-t:       Erases blank lines and spaces. 
-'lines:  Erases blank lines only. 
-'spaces: Erases spaces only. 
+t:       Erases blank lines and spaces.
+'lines:  Erases blank lines only.
+'spaces: Erases spaces only.
 nil:     Doesn't erase any whitespace."
   :type '(choice (const :tag "Erases blank lines and spaces." t)
                  (const :tag "Erases blank lines only." lines)
                  (const :tag "Erases spaces only." spaces)
                  (const :tag "Doesn't erase any whitespace." nil))
   :group 'latex-extra
-  :package-version '(latex-extra . "0.1a"))
+  :package-version '(latex-extra . "1.0"))
 
 (defun latex/clean-fill-indent-environment ()
-  "Severely reorganize whitespace in current environment.
+  "Severely reorganise whitespace in current environment.
 
 Performs the following actions (on current environment):
  1. Turn multiple new-lines and spaces into single new-lines and
     spaces, according to `latex/clean-up-whitespace'.
- 2. Fill text, except inside evironments given by
+ 2. Fill text, except inside environments given by
     `latex/no-autofill-environments'.
  3. Indent everything."
   (interactive)
@@ -187,41 +188,54 @@ Performs the following actions (on current environment):
                                      "\\documentclass")
   "List of strings which define what a section can be."
   :type '(repeat string)
-  :group 'latex-functions
-  :package-version '(latex-functions . ""))
-
-(defun always-t (&rest x) "Return t." t)
+  :group 'latex-extra
+  :package-version '(latex-extra . "1.0"))
 
 (defun latex/next-section (n)
-  "Move N (or 1) headers forward, where header stands for anything in the variable `latex/section-hierarchy'.
+  "Move N (or 1) headers forward.
+
+Header stands for any string listed in `latex/section-hierarchy'.
 
 Negative N goes backward."
   (interactive "p")
-  (goto-char (latex//find-nth-section-with-predicate n 'always-t)))
+  (goto-char (latex//find-nth-section-with-predicate n #'always-t)))
 
 (defun latex/previous-section (n)
-  "Move N (or 1) headers backward, where header stands for anything in the variable `latex/section-hierarchy'."
+  "Move N (or 1) headers backward.
+
+Header stands for any string listed in `latex/section-hierarchy'."
   (interactive "p")
   (latex/next-section (- n)))
 
 (defun latex/up-section (n)
-  "Move N (or 1) headers forward, where header stands for the current level of anything in the variable `latex/section-hierarchy'."
+  "Move backward to the header that contains the current one.
+
+Header stands for any string listed in `latex/section-hierarchy'.
+
+With prefix argument N, goes that many headers up the hierarchy.
+Negative N goes forward, but still goes \"up\" the hierarchy."
   (interactive "p")
-  (goto-char (latex//find-nth-section-with-predicate (- n) 'latex/section<)))
+  (goto-char (latex//find-nth-section-with-predicate (- n) #'latex/section<)))
 
 (defun latex/next-section-same-level (n)
-  "Move N (or 1) headers forward, where header stands for the current level of anything in the variable `latex/section-hierarchy'.
+  "Move N (or 1) headers forward.
+
+Header stands for any string listed in `latex/section-hierarchy'.
 
 Negative N goes backward."
   (interactive "p")
-  (goto-char (latex//find-nth-section-with-predicate n 'latex/section<=)))
+  (goto-char (latex//find-nth-section-with-predicate n #'latex/section<=)))
 
 (defun latex/previous-section-same-level (n)
-  "Move N (or 1) headers backward, where header stands for the current level of anything in the variable `latex/section-hierarchy'."
+  "Move N (or 1) headers backward.
+
+Header stands for any string listed in `latex/section-hierarchy'."
   (interactive "p")
   (latex/next-section-same-level (- n)))
 
 (defun latex//impl-previous-section ()
+  "Find the previous header, avoiding dependencies and chaining.
+Used for implementation."
   (let ((dest
          (save-match-data
            (save-excursion
@@ -231,7 +245,7 @@ Negative N goes backward."
     (if dest (goto-char dest) nil)))
 
 (defun latex//find-nth-section-with-predicate (n pred)
-  "Find the next (or previous) N headers satisfying predicate PRED, return a marker at the start of the last match.
+  "Find Nth header satisfying predicate PRED, return the start of last match.
 
 If this function fails, it returns original point position (so
 you can just call it directly inside `goto-char').
@@ -281,11 +295,11 @@ determined by the positivity of N.
       result)))
 
 (defun latex/section<= (x y)
-  "t if Y comes after (or is equal to) X in `latex/section-hierarchy'."
+  "Non-nil if Y comes after (or is equal to) X in `latex/section-hierarchy'."
   (member y (member x latex/section-hierarchy)))
 
 (defun latex/section< (x y)
-  "t if Y comes after X in `latex/section-hierarchy'."
+  "Non-nil if Y comes after X in `latex/section-hierarchy'."
   (member y (cdr-safe (member x latex/section-hierarchy))))
 
 (defun latex/section-regexp ()
@@ -307,10 +321,10 @@ determined by the positivity of N.
   :type '(choice (repeat string)
                  (const :tag "Never autofill." 'all))
   :group 'latex-extra
-  :package-version '(latex-extra . "0.1a"))
+  :package-version '(latex-extra . "1.0"))
 
 (defun latex/auto-fill-function ()
-  "Perform auto-fill unless point is inside one of the `latex/no-autofill-environments'.
+  "Perform auto-fill unless point is inside an unsuitable environment.
 
 This function checks whether point is currently inside one of the
 LaTeX environments listed in `latex/no-autofill-environments'. If
@@ -330,7 +344,7 @@ so, it inhibits automatic filling of the current paragraph."
     do-auto-fill))
 
 (defun latex/setup-auto-fill ()
-  "This function sets the function used to fill a paragraph to `latex/auto-fill-function'."
+  "Set the function used to fill a paragraph to `latex/auto-fill-function'."
   (setq auto-fill-function 'latex/auto-fill-function))
 
 ;;;###autoload
@@ -343,7 +357,9 @@ so, it inhibits automatic filling of the current paragraph."
   :group 'latex-extra)
 
 (defcustom latex/max-runs 10
-  "Max number of times `TeX-command-master' can run before we decide something's wrong.
+  "Max number of times `TeX-command-master' can run.
+
+If it goes beyond this, we decide something's wrong.
 
 Used by `latex/compile-commands-until-done'."
   :type 'integer
@@ -353,11 +369,11 @@ Used by `latex/compile-commands-until-done'."
   "If non-nil `latex/compile-commands-until-done' will NOT ask for confirmation on the \"VIEW\" command."
   :type 'boolean
   :group 'latex-extra
-  :package-version '(latex-extra . "0.1a"))
+  :package-version '(latex-extra . "1.0"))
 (defvar latex/count-same-command 0)
 
 (defun latex/command-default (name)
-  "Next TeX command to use. Most of the code is stolen from `TeX-command-query'."
+  "Next TeX command to use on file NAME."
   (cond ((if (string-equal name TeX-region)
              (TeX-check-files (concat name "." (TeX-output-extension))
                               (list name)
@@ -380,10 +396,16 @@ Used by `latex/compile-commands-until-done'."
   "If non-nil `latex/compile-commands-until-done' calls `TeX-next-error' without confirmation (if there is an error, of course)."
   :type 'boolean
   :group 'latex-extra
-  :package-version '(latex-extra . "0.1a"))
+  :package-version '(latex-extra . "1.0"))
 
-(defun latex/compile-commands-until-done ()
-  "Fully compile the current document, then view it. If there are errors, call `TeX-next-error' instead of viewing.
+(defun latex/compile-commands-until-done (clean-first)
+  "Fully compile the current document, then view it.
+
+If there are errors, call `TeX-next-error' instead of viewing.
+
+With prefix argument CLEAN-FIRST, removes the output and
+auxiliary files before starting (by running (TeX-clean t)). This
+essentially runs the compilation in a clean slate.
 
 This command repeatedly runs `TeX-command-master' until: (1) we
 reach the VIEW command, (2) an error is found, or (3) the limit
@@ -392,7 +414,8 @@ is wrong).
 
 `latex/next-error-skip-confirmation' and
 `latex/view-skip-confirmation' can customize this command."
-  (interactive)
+  (interactive "P")
+  (when clean-first (TeX-clean t))
   (let* ((thebuffer (buffer-name))
          ;; (theplace (point))
          (TeX-process-asynchronous nil)
@@ -403,7 +426,7 @@ is wrong).
             (> counter -1)
             (not (equal nextCmd TeX-command-Show)))
       (when (> counter latex/max-runs)
-        (error "Number of commands run exceeded %d (%S). Something is probably wrong."
+        (error "Number of commands run exceeded %d (%S). Something is probably wrong"
                latex/max-runs 'latex/max-runs))
       (message "%d Doing: %s" (incf counter) nextCmd)
       (set-buffer thebuffer)
@@ -412,7 +435,7 @@ is wrong).
           (setq nextCmd (latex/command-default master-file))
         (setq counter -1)
         (when (or latex/next-error-skip-confirmation
-                  (y-or-n-p "Error found. Visit it?"))
+                  (y-or-n-p "Error found. Visit it? "))
           (TeX-next-error t))))
     (when (>= counter 0) ;; 
       (set-buffer thebuffer)
@@ -421,14 +444,17 @@ is wrong).
         (TeX-command TeX-command-Show 'TeX-master-file)))))
 
 (defcustom latex/override-preview-map t
-  "If this is non-nil, we'll move the `preview-map' in LaTeX-mode from \"\" to \"p\".
+  "If non-nil, move the `preview-map' in LaTeX-mode from \"C-c C-p\" to \"C-c p\".
+
+This this key is needed bind for `latex/previous-section'.
 
 If you set this to nil, we won't bind the command
 `latex/previous-section' to anything (it would be usually bound
-to \"\"), so it will be up to you to bind it something else."
+to \"C-c C-p\"), so it will be up to you to bind it to something
+else."
   :type 'boolean
   :group 'latex-extra
-  :package-version '(latex-extra . "0.1a"))
+  :package-version '(latex-extra . "1.0"))
 
 ;;;###autoload
 (defadvice LaTeX-preview-setup (after latex/after-LaTeX-preview-setup-advice () activate)
@@ -438,7 +464,7 @@ to \"\"), so it will be up to you to bind it something else."
     (define-key LaTeX-mode-map "p"  'preview-map)))
 
 (defun latex/setup-keybinds ()
-  "Define our keybinds."
+  "Define our key binds."
   (interactive)
   (define-key LaTeX-mode-map ""   'latex/beginning-of-line)
   ;; (define-key LaTeX-mode-map "" 'latex/do-compile)
@@ -459,3 +485,7 @@ to \"\"), so it will be up to you to bind it something else."
 (provide 'latex-extra)
 ;;; latex-extra.el ends here.
 
+
+(provide 'latex-extra)
+
+;;; latex-extra.el ends here
