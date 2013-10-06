@@ -255,10 +255,11 @@ determined by the positivity of N.
   :package-version '(latex-extra . "0.1a"))
 
 (defun latex/auto-fill-function ()
-  "This function checks whether point is currently inside one of
-the LaTeX environments listed in
-`latex/no-autofill-environments'. If so, it inhibits automatic
-filling of the current paragraph."
+  "Perform auto-fill unless point is inside one of the `latex/no-autofill-environments'.
+
+This function checks whether point is currently inside one of the
+LaTeX environments listed in `latex/no-autofill-environments'. If
+so, it inhibits automatic filling of the current paragraph."
   (when (latex/do-auto-fill-p)
     (do-auto-fill)))
 
@@ -274,9 +275,7 @@ filling of the current paragraph."
     do-auto-fill))
 
 (defun latex/setup-auto-fill ()
-  "This function turns on auto-fill-mode and sets the function
-used to fill a paragraph to `latex/auto-fill-function'."
-  (auto-fill-mode)
+  "This function sets the function used to fill a paragraph to `latex/auto-fill-function'."
   (setq auto-fill-function 'latex/auto-fill-function))
 
 ;;;###autoload
