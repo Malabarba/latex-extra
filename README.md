@@ -1,4 +1,4 @@
-movetex
+latex-extra
 =======
 
-Adds keys to navigate LaTeX sections, similar to org headline navigation.
+Extra keys for navigating LaTeX sections (similar to org headlines).
