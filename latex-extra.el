@@ -50,7 +50,7 @@
   "Opens github issues page in a web browser. Please send me any bugs you find, and please inclue your emacs and latex versions."
   (interactive)
   (message "Your latex-version is: %s, and your emacs version is: %s.\nPlease include this in your report!"
-           latex-version emacs-version)
+           latex-extra-version emacs-version)
   (browse-url "https://github.com/BruceConnor/latex-extra/issues/new"))
 (defun latex-customize ()
   "Open the customization menu in the `latex-extra' group."
@@ -279,6 +279,10 @@ used to fill a paragraph to `latex/auto-fill-function'."
   (auto-fill-mode)
   (setq auto-fill-function 'latex/auto-fill-function))
 
+;;;###autoload
+(add-hook 'LaTeX-mode-hook 'latex/setup-auto-fill)
+
+;;; Compilation
 (defvar latex/sentinel nil)
 (defvar latex/count-same-command 0)
 (defvar latex/last-command nil)
@@ -286,17 +290,19 @@ used to fill a paragraph to `latex/auto-fill-function'."
 (defcustom latex/view-after-compile t
   "Start view-command at end of `latex/compile-commands-until-done'?"
   :type 'boolean
-  :group 'latex-extra-compilation)
+  :group 'latex-extra)
 
-(defcustom latex/max-runs-same-command 5
-  "Max number of times the same command can run before we decide something's wrong."
+(defcustom latex/max-runs 10
+  "Max number of times `TeX-command-master' can run before we decide something's wrong.
+
+Used by `latex/compile-commands-until-done'."
   :type 'integer
-  :group 'latex-extra-compilation)
+  :group 'latex-extra)
 
-(defcustom latex/show-skip-confirmation t
+(defcustom latex/view-skip-confirmation t
   "If non-nil `latex/compile-commands-until-done' will NOT ask for confirmation on the \"VIEW\" command."
   :type 'boolean
-  :group 'latex-extra-compilation
+  :group 'latex-extra
   :package-version '(latex-extra . "0.1a"))
 
 (defun latex/command-default (name)
@@ -319,46 +325,22 @@ used to fill a paragraph to `latex/auto-fill-function'."
                                    TeX-command-Show))
         (TeX-command-Show)))
 
-(defun latex/sentinel (&optional proc sentinel)
-  "Call the standard-sentinel of the current LaTeX-process.
-
-If there is still something left do do start the next latex-command."
-  (set-buffer (process-buffer proc))
-  (funcall latex/sentinel proc sentinel)
-  (let ((case-fold-search nil))
-    (when (string-match "\\(finished\\|exited\\)" sentinel)
-      (set-buffer TeX-command-buffer)
-      (unless (plist-get TeX-error-report-switches (intern (TeX-master-file)))
-        (latex/do-compile)))))
-
-(defun latex/do-compile ()
-  "Compile once."
-  (interactive)
-  (let ((nextCmd (latex/command-default (TeX-master-file)))
-        proc)
-    (if (and (null latex/view-after-compile)
-             (equal nextCmd TeX-command-Show))
-        (when  (called-interactively-p 'any)
-          (message "latex/do-compile: Nothing to be done."))
-      (TeX-command nextCmd 'TeX-master-file)
-      (when (or (called-interactively-p 'any)
-                (null (boundp 'latex/count-same-command))
-                (null (boundp 'latex/last-command))
-                (null (equal nextCmd latex/last-command)))
-        (mapc 'make-local-variable '(latex/sentinel latex/count-same-command latex/last-command))
-        (message "latex/do-compile: Did %s %d times." latex/last-command latex/count-same-command)
-        (setq latex/count-same-command 1))
-      (if (>= latex/count-same-command latex/max-runs-same-command)
-          (error "latex/do-compile: Did %s already %d times. Something might be wrong, so I'll stop now."
-                   latex/last-command latex/count-same-command)
-        (setq latex/count-same-command (1+ latex/count-same-command))
-        (setq latex/last-command nextCmd)
-        (and (null (equal nextCmd TeX-command-Show))
-             (setq proc (get-buffer-process (current-buffer)))
-             (setq latex/sentinel (process-sentinel proc))
-             (set-process-sentinel proc 'latex/sentinel))))))
+(defcustom latex/next-error-skip-confirmation nil
+  "If non-nil `latex/compile-commands-until-done' calls `TeX-next-error' without confirmation (if there is an error, of course)."
+  :type 'boolean
+  :group 'latex-extra
+  :package-version '(latex-extra . "0.1a"))
 
 (defun latex/compile-commands-until-done ()
+  "Fully compile the current document, then view it. If there are errors, call `TeX-next-error' instead of viewing.
+
+This command repeatedly runs `TeX-command-master' until: (1) we
+reach the VIEW command, (2) an error is found, or (3) the limit
+defined in `latex/max-runs' is reached (which indicates something
+is wrong).
+
+`latex/next-error-skip-confirmation' and
+`latex/view-skip-confirmation' can customize this command."
   (interactive)
   (let* ((thebuffer (buffer-name))
          ;; (theplace (point))
@@ -369,16 +351,23 @@ If there is still something left do do start the next latex-command."
     (while (and ;; nextCmd
             (> counter -1)
             (not (equal nextCmd TeX-command-Show)))
+      (when (> counter latex/max-runs)
+        (error "Number of commands run exceeded %d (%S). Something is probably wrong."
+               latex/max-runs 'latex/max-runs))
       (message "%d Doing: %s" (incf counter) nextCmd)
       (set-buffer thebuffer)
       (TeX-command nextCmd 'TeX-master-file)
       (if (null (plist-get TeX-error-report-switches (intern master-file)))
           (setq nextCmd (latex/command-default master-file))
         (setq counter -1)
-        (TeX-next-error t)))
+        (when (or latex/next-error-skip-confirmation
+                  (y-or-n-p "Error found. Visit it?"))
+          (TeX-next-error t))))
     (when (>= counter 0) ;; 
       (set-buffer thebuffer)
-      (TeX-command TeX-command-Show 'TeX-master-file latex/show-skip-confirmation))))
+      (if latex/view-skip-confirmation
+          (TeX-view)
+        (TeX-command TeX-command-Show 'TeX-master-file)))))
 
 (defcustom latex/override-preview-map t
   "If this is non-nil, we'll move the `preview-map' in LaTeX-mode from \"\" to \"p\".
@@ -401,7 +390,7 @@ to \"\"), so it will be up to you to bind it something else."
   "Define our keybinds."
   (interactive)
   (define-key LaTeX-mode-map ""   'latex/beginning-of-line)
-  (define-key LaTeX-mode-map "" 'latex/do-compile)
+  ;; (define-key LaTeX-mode-map "" 'latex/do-compile)
   (define-key LaTeX-mode-map "" 'latex/compile-commands-until-done)
   (define-key LaTeX-mode-map "" 'latex/clean-fill-indent-environment)
   (define-key LaTeX-mode-map "" 'latex/up-section)
@@ -418,3 +407,43 @@ to \"\"), so it will be up to you to bind it something else."
 
 (provide 'latex-extra)
 ;;; latex-extra.el ends here.
+
+;; (defun latex/sentinel (&optional proc sentinel)
+;;   "Call the standard-sentinel of the current LaTeX-process.
+
+;; If there is still something left do do start the next latex-command."
+;;   (set-buffer (process-buffer proc))
+;;   (funcall latex/sentinel proc sentinel)
+;;   (let ((case-fold-search nil))
+;;     (when (string-match "\\(finished\\|exited\\)" sentinel)
+;;       (set-buffer TeX-command-buffer)
+;;       (unless (plist-get TeX-error-report-switches (intern (TeX-master-file)))
+;;         (latex/do-compile)))))
+
+;; (defun latex/do-compile ()
+;;   "Compile once."
+;;   (interactive)
+;;   (let ((nextCmd (latex/command-default (TeX-master-file)))
+;;         proc)
+;;     (if (and (null latex/view-after-compile)
+;;              (equal nextCmd TeX-command-Show))
+;;         (when  (called-interactively-p 'any)
+;;           (message "latex/do-compile: Nothing to be done."))
+;;       (TeX-command nextCmd 'TeX-master-file)
+;;       (when (or (called-interactively-p 'any)
+;;                 (null (boundp 'latex/count-same-command))
+;;                 (null (boundp 'latex/last-command))
+;;                 (null (equal nextCmd latex/last-command)))
+;;         (mapc 'make-local-variable '(latex/sentinel latex/count-same-command latex/last-command))
+;;         (message "latex/do-compile: Did %s %d times." latex/last-command latex/count-same-command)
+;;         (setq latex/count-same-command 1))
+;;       (if (>= latex/count-same-command latex/max-runs-same-command)
+;;           (error "latex/do-compile: Did %s already %d times. Something might be wrong, so I'll stop now."
+;;                    latex/last-command latex/count-same-command)
+;;         (setq latex/count-same-command (1+ latex/count-same-command))
+;;         (setq latex/last-command nextCmd)
+;;         (and (null (equal nextCmd TeX-command-Show))
+;;              (setq proc (get-buffer-process (current-buffer)))
+;;              (setq latex/sentinel (process-sentinel proc))
+;;              (set-process-sentinel proc 'latex/sentinel))))))
+
