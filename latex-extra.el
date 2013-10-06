@@ -283,10 +283,6 @@ used to fill a paragraph to `latex/auto-fill-function'."
 (add-hook 'LaTeX-mode-hook 'latex/setup-auto-fill)
 
 ;;; Compilation
-(defvar latex/sentinel nil)
-(defvar latex/count-same-command 0)
-(defvar latex/last-command nil)
-
 (defcustom latex/view-after-compile t
   "Start view-command at end of `latex/compile-commands-until-done'?"
   :type 'boolean
@@ -304,6 +300,7 @@ Used by `latex/compile-commands-until-done'."
   :type 'boolean
   :group 'latex-extra
   :package-version '(latex-extra . "0.1a"))
+(defvar latex/count-same-command 0)
 
 (defun latex/command-default (name)
   "Next TeX command to use. Most of the code is stolen from `TeX-command-query'."
@@ -407,43 +404,4 @@ to \"\"), so it will be up to you to bind it something else."
 
 (provide 'latex-extra)
 ;;; latex-extra.el ends here.
-
-;; (defun latex/sentinel (&optional proc sentinel)
-;;   "Call the standard-sentinel of the current LaTeX-process.
-
-;; If there is still something left do do start the next latex-command."
-;;   (set-buffer (process-buffer proc))
-;;   (funcall latex/sentinel proc sentinel)
-;;   (let ((case-fold-search nil))
-;;     (when (string-match "\\(finished\\|exited\\)" sentinel)
-;;       (set-buffer TeX-command-buffer)
-;;       (unless (plist-get TeX-error-report-switches (intern (TeX-master-file)))
-;;         (latex/do-compile)))))
-
-;; (defun latex/do-compile ()
-;;   "Compile once."
-;;   (interactive)
-;;   (let ((nextCmd (latex/command-default (TeX-master-file)))
-;;         proc)
-;;     (if (and (null latex/view-after-compile)
-;;              (equal nextCmd TeX-command-Show))
-;;         (when  (called-interactively-p 'any)
-;;           (message "latex/do-compile: Nothing to be done."))
-;;       (TeX-command nextCmd 'TeX-master-file)
-;;       (when (or (called-interactively-p 'any)
-;;                 (null (boundp 'latex/count-same-command))
-;;                 (null (boundp 'latex/last-command))
-;;                 (null (equal nextCmd latex/last-command)))
-;;         (mapc 'make-local-variable '(latex/sentinel latex/count-same-command latex/last-command))
-;;         (message "latex/do-compile: Did %s %d times." latex/last-command latex/count-same-command)
-;;         (setq latex/count-same-command 1))
-;;       (if (>= latex/count-same-command latex/max-runs-same-command)
-;;           (error "latex/do-compile: Did %s already %d times. Something might be wrong, so I'll stop now."
-;;                    latex/last-command latex/count-same-command)
-;;         (setq latex/count-same-command (1+ latex/count-same-command))
-;;         (setq latex/last-command nextCmd)
-;;         (and (null (equal nextCmd TeX-command-Show))
-;;              (setq proc (get-buffer-process (current-buffer)))
-;;              (setq latex/sentinel (process-sentinel proc))
-;;              (set-process-sentinel proc 'latex/sentinel))))))
 
