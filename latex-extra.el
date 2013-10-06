@@ -1,4 +1,4 @@
-;;; latex-extra.el --- Extra keys for navigating LaTeX sections (similar to org headings).
+;;; latex-extra.el --- Adds several useful functionalities to LaTeX-mode.
 
 ;; Copyright (C) 2013 Artur Malabarba <bruce.connor.am@gmail.com>
 
