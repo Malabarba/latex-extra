@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 0.1a
+;; Version: 1.0
 ;; Keywords: 
 ;; Prefix: latex
 ;; Separator: /
@@ -92,8 +92,8 @@
 (eval-when-compile (require 'tex))
 (eval-when-compile (require 'latex))
 
-(defconst latex-extra-version "0.1a" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 1 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.0" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 2 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please inclue your emacs and latex versions."
   (interactive)
@@ -111,6 +111,7 @@
   (goto-char (or start (point-min)))
   (while (re-search-forward reg end t)
     (replace-match rep nil nil)))
+(defun always-t (&rest x) "Return t." t)
 
 ;;; Whitespace cleaning
 (defcustom latex/clean-up-whitespace t
@@ -130,7 +131,7 @@ nil:     Doesn't erase any whitespace."
                  (const :tag "Erases spaces only." spaces)
                  (const :tag "Doesn't erase any whitespace." nil))
   :group 'latex-extra
-  :package-version '(latex-extra . "0.1a"))
+  :package-version '(latex-extra . "1.0"))
 
 (defun latex/clean-fill-indent-environment ()
   "Severely reorganize whitespace in current environment.
@@ -187,10 +188,8 @@ Performs the following actions (on current environment):
                                      "\\documentclass")
   "List of strings which define what a section can be."
   :type '(repeat string)
-  :group 'latex-functions
-  :package-version '(latex-functions . ""))
-
-(defun always-t (&rest x) "Return t." t)
+  :group 'latex-extra
+  :package-version '(latex-extra . "1.0"))
 
 (defun latex/next-section (n)
   "Move N (or 1) headers forward, where header stands for anything in the variable `latex/section-hierarchy'.
@@ -307,7 +306,7 @@ determined by the positivity of N.
   :type '(choice (repeat string)
                  (const :tag "Never autofill." 'all))
   :group 'latex-extra
-  :package-version '(latex-extra . "0.1a"))
+  :package-version '(latex-extra . "1.0"))
 
 (defun latex/auto-fill-function ()
   "Perform auto-fill unless point is inside one of the `latex/no-autofill-environments'.
@@ -353,7 +352,7 @@ Used by `latex/compile-commands-until-done'."
   "If non-nil `latex/compile-commands-until-done' will NOT ask for confirmation on the \"VIEW\" command."
   :type 'boolean
   :group 'latex-extra
-  :package-version '(latex-extra . "0.1a"))
+  :package-version '(latex-extra . "1.0"))
 (defvar latex/count-same-command 0)
 
 (defun latex/command-default (name)
@@ -380,7 +379,7 @@ Used by `latex/compile-commands-until-done'."
   "If non-nil `latex/compile-commands-until-done' calls `TeX-next-error' without confirmation (if there is an error, of course)."
   :type 'boolean
   :group 'latex-extra
-  :package-version '(latex-extra . "0.1a"))
+  :package-version '(latex-extra . "1.0"))
 
 (defun latex/compile-commands-until-done ()
   "Fully compile the current document, then view it. If there are errors, call `TeX-next-error' instead of viewing.
@@ -428,7 +427,7 @@ If you set this to nil, we won't bind the command
 to \"\"), so it will be up to you to bind it something else."
   :type 'boolean
   :group 'latex-extra
-  :package-version '(latex-extra . "0.1a"))
+  :package-version '(latex-extra . "1.0"))
 
 ;;;###autoload
 (defadvice LaTeX-preview-setup (after latex/after-LaTeX-preview-setup-advice () activate)
