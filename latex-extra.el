@@ -5,7 +5,9 @@
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
 ;; Version: 1.0
-;; Keywords:
+;; Keywords: tex
+;; Package-Requires: ((auctex "11.86.1"))
+;; 
 ;; Prefix: latex
 ;; Separator: /
 
@@ -93,7 +95,6 @@
 ;; 
 
 ;;; Change Log:
-;; 0.1a - 20131005 - Created File.
 ;;; Code:
 (eval-when-compile (require 'tex))
 (eval-when-compile (require 'latex))
