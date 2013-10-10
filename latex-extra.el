@@ -129,17 +129,21 @@
 (defun latex/end-of-environment (&optional N nomark)
   "Move just past the end of the current latex environment.
 
-Leaves point outside the environment."
+Leaves point outside the environment.
+Similar to `LaTeX-find-matching-end', but it accepts
+numeric (prefix) argument N and skips some whitespace after the
+closing \"\\end\"."
   (interactive "p")
   (unless (or nomark (region-active-p)) (push-mark))
   (let ((start (point))
         (count (abs N))
-        (direction (if (< N 0) -1 1)))
-    (while (and (> count 0)
-                (re-search-forward "\\\\\\(begin\\|end\\)" nil t direction))
-      (if (latex//found-undesired-string direction)
-          (incf count)
-        (decf count)))
+        (direction 1)
+        (movement-function 'LaTeX-find-matching-end))
+    (when (< N 0)
+      (setq direction -1)
+      (setq movement-function 'LaTeX-find-matching-begin))
+    (while (and (> count 0) (funcall movement-function))
+      (decf count))
     (when (> direction 0)    
       (latex//forward-arguments)
       (skip-chars-forward "[:blank:]")
@@ -177,41 +181,14 @@ Never goes into deeper environments."
 
 Leaves point outside the environment."
   (interactive "p")
-  (latex/end-of-environment (- N) nomark)
-  ;; (unless (or nomark (region-active-p)) (push-mark))
-  ;; (let ((start (point))
-  ;;       (count (if (integerp N) N 1))
-  ;;       (end-string (if (equal (char-syntax ?\\) ?w) "\\end" "end")))
-  ;;   (while (> count 0) 				;Search for matching \end
-  ;;     (if (not (re-search-backward "\\\\\\(begin\\|end\\)" (point-min) t))
-  ;;         (if noerror (setq count nil) (error "Not inside an environment? Moving back to %d" (goto-char start)))
-  ;;       (forward-char)
-  ;;       (if (equal (thing-at-point 'word) end-string) (incf count)
-  ;;         (decf count))
-  ;;       (backward-char)))
-  ;;   count)
-  )
+  (latex/end-of-environment (- N) nomark))
 
 (defun latex/backward-environment (&optional N nomark)
   "Move to the \\begin of the next \\end, or to the \\begin of the current environment (whichever comes first) N times.
 
 Never goes into deeper environments."
   (interactive "p")
-  (latex/forward-environment (- N) nomark)  
-  ;; (unless (or nomark (region-active-p)) (push-mark))
-  ;; (let ((start (point))
-  ;;       (count (if (integerp N) N 1))
-  ;;       (end-string (if (equal (char-syntax ?\\) ?w) "\\end" "end")))
-  ;;   (while (> count 0) (decf count)	;Search for matching \begin
-  ;;          (if (not (re-search-backward "\\\\\\(begin\\|end\\)" (point-min) t))
-  ;;              (error "No next environment found! Moving back to %d" (goto-char start)))
-  ;;          (forward-char)
-  ;;          (if (equal (thing-at-point 'word) end-string)
-  ;;              (unless (beginning-of-environment nil t t)
-  ;;                (error "Unmatched \\end? back to %d" (goto-char start)))
-  ;;            (backward-char))))
-  )
-
+  (latex/forward-environment (- N) nomark))
 
 ;;; Section navigation
 (defcustom latex/section-hierarchy '("\\headerbox"
@@ -566,6 +543,10 @@ else."
 (defun latex/setup-keybinds ()
   "Define our key binds."
   (interactive)
+  (define-key LaTeX-mode-map "\C-\M-f" 'latex/forward-environment)
+  (define-key LaTeX-mode-map "\C-\M-b" 'latex/backward-environment)
+  (define-key LaTeX-mode-map "\C-\M-a" 'latex/beginning-of-environment)
+  (define-key LaTeX-mode-map "\C-\M-e" 'latex/end-of-environment)
   (define-key LaTeX-mode-map ""   'latex/beginning-of-line)
   ;; (define-key LaTeX-mode-map "" 'latex/do-compile)
   (define-key LaTeX-mode-map "" 'latex/compile-commands-until-done)
