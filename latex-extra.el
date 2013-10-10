@@ -115,82 +115,102 @@
 (defun always-t (&rest x) "Return t." t)
 
 ;;; Environment navigation
-(defun end-of-environment (&optional N noerror nomark)
+(defun latex//found-undesired-string (dir)
+  "Decide whether the last search found the desired string."
+  (if (> dir 0)
+      (looking-back "begin")
+    (looking-at "\\\\end")))
+
+(defun latex//forward-arguments ()
+  "Skip forward over the arguments."
+  (when (looking-at "\\[") (forward-sexp 1))
+  (when (looking-at "{") (forward-sexp 1)))
+
+(defun latex/end-of-environment (&optional N nomark)
   "Move just past the end of the current latex environment.
 
 Leaves point outside the environment."
-  (interactive)
+  (interactive "p")
   (unless (or nomark (region-active-p)) (push-mark))
   (let ((start (point))
-        (begin-string (if (equal (char-syntax ?\\) ?w) "\\begin" "begin"))
-        (count (if (integerp N) N 1)))
-    (while (> count 0) 				;Search for matching \end
-      (if (not (re-search-forward "\\\\\\(begin\\|end\\)" (point-max) t))
-          (if noerror (setq count nil) (error "Not inside an environment? Moving back to %d" (goto-char start)))
-        (if (equal (thing-at-point 'word) begin-string) (incf count)
-          (decf count))))
-    (forward-sexp)
-    (while (looking-at " ") (forward-char 1))
-    (if (looking-at "\n") (forward-char 1))
-    (while (looking-at " ") (forward-char 1))
-    ;; (if (looking-at "\n") (forward-char 1))
-    ;; (LaTeX-back-to-indentation)
-    count))
+        (count (abs N))
+        (direction (if (< N 0) -1 1)))
+    (while (and (> count 0)
+                (re-search-forward "\\\\\\(begin\\|end\\)" nil t direction))
+      (if (latex//found-undesired-string direction)
+          (incf count)
+        (decf count)))
+    (when (> direction 0)    
+      (latex//forward-arguments)
+      (skip-chars-forward "[:blank:]")
+      (when (looking-at "\n")
+        (forward-char 1)
+        (skip-chars-forward "[:blank:]")))
+    ;; Return t or nil
+    (case count     
+      (0 t)
+      (1 (message "Reached the end.") nil)
+      (t (if (> direction 0)
+             (error "Unclosed \\begin?")
+           (error "Unopened \\end?"))))))
 
-(defun forward-environment (&optional N nomark)
+(defun latex/forward-environment (&optional N nomark)
   "Move to the \\end of the next \\begin, or to the \\end of the current environment (whichever comes first) N times.
 
 Never goes into deeper environments."
   (interactive "p")
   (unless (or nomark (region-active-p)) (push-mark))
   (let ((start (point))
-        (begin-string (if (equal (char-syntax ?\\) ?w) "\\begin" "begin"))
-        (count (if (integerp N) N 1)))
-    (while (> count 0) (decf count)	;Search for matching \end
-           (if (not (re-search-forward
-                     "\\\\\\(begin\\|end\\)" (point-max) t))
-               (error "No next environment found! Moving back to %d"
-                      (goto-char start)))
-           (if (equal (thing-at-point 'word) begin-string)
-               (unless (end-of-environment nil t t)
-                 (error "Unmatched \\begin?"))
-             (forward-sexp)))))
+        (count (abs N))
+        (direction (if (< N 0) -1 1)))
+    (while (and (> count 0)
+                (re-search-forward "\\\\\\(begin\\|end\\)"
+                                   nil t direction))
+      (decf count)
+      (if (latex//found-undesired-string direction)
+          (unless (latex/end-of-environment direction t)
+            (error "Unmatched \\begin?"))
+        (latex//forward-arguments)))))
 
-(defun beginning-of-environment (&optional N noerror nomark)
+(defun latex/beginning-of-environment (&optional N nomark)
   "Move to the beginning of the current latex environment.
 
 Leaves point outside the environment."
-  (interactive)
-  (unless (or nomark (region-active-p)) (push-mark))
-  (let ((start (point))
-        (count (if (integerp N) N 1))
-        (end-string (if (equal (char-syntax ?\\) ?w) "\\end" "end")))
-    (while (> count 0) 				;Search for matching \end
-      (if (not (re-search-backward "\\\\\\(begin\\|end\\)" (point-min) t))
-          (if noerror (setq count nil) (error "Not inside an environment? Moving back to %d" (goto-char start)))
-        (forward-char)
-        (if (equal (thing-at-point 'word) end-string) (incf count)
-          (decf count))
-        (backward-char)))
-    count))
+  (interactive "p")
+  (latex/end-of-environment (- N) nomark)
+  ;; (unless (or nomark (region-active-p)) (push-mark))
+  ;; (let ((start (point))
+  ;;       (count (if (integerp N) N 1))
+  ;;       (end-string (if (equal (char-syntax ?\\) ?w) "\\end" "end")))
+  ;;   (while (> count 0) 				;Search for matching \end
+  ;;     (if (not (re-search-backward "\\\\\\(begin\\|end\\)" (point-min) t))
+  ;;         (if noerror (setq count nil) (error "Not inside an environment? Moving back to %d" (goto-char start)))
+  ;;       (forward-char)
+  ;;       (if (equal (thing-at-point 'word) end-string) (incf count)
+  ;;         (decf count))
+  ;;       (backward-char)))
+  ;;   count)
+  )
 
-(defun backward-environment (&optional N nomark)
+(defun latex/backward-environment (&optional N nomark)
   "Move to the \\begin of the next \\end, or to the \\begin of the current environment (whichever comes first) N times.
 
 Never goes into deeper environments."
   (interactive "p")
-  (unless (or nomark (region-active-p)) (push-mark))
-  (let ((start (point))
-        (count (if (integerp N) N 1))
-        (end-string (if (equal (char-syntax ?\\) ?w) "\\end" "end")))
-    (while (> count 0) (decf count)	;Search for matching \begin
-           (if (not (re-search-backward "\\\\\\(begin\\|end\\)" (point-min) t))
-               (error "No next environment found! Moving back to %d" (goto-char start)))
-           (forward-char)
-           (if (equal (thing-at-point 'word) end-string)
-               (unless (beginning-of-environment nil t t)
-                 (error "Unmatched \\end? back to %d" (goto-char start)))
-             (backward-char)))))
+  (latex/forward-environment (- N) nomark)  
+  ;; (unless (or nomark (region-active-p)) (push-mark))
+  ;; (let ((start (point))
+  ;;       (count (if (integerp N) N 1))
+  ;;       (end-string (if (equal (char-syntax ?\\) ?w) "\\end" "end")))
+  ;;   (while (> count 0) (decf count)	;Search for matching \begin
+  ;;          (if (not (re-search-backward "\\\\\\(begin\\|end\\)" (point-min) t))
+  ;;              (error "No next environment found! Moving back to %d" (goto-char start)))
+  ;;          (forward-char)
+  ;;          (if (equal (thing-at-point 'word) end-string)
+  ;;              (unless (beginning-of-environment nil t t)
+  ;;                (error "Unmatched \\end? back to %d" (goto-char start)))
+  ;;            (backward-char))))
+  )
 
 
 ;;; Section navigation
@@ -418,7 +438,7 @@ Performs the following actions (on current environment):
         (while (and (<= (point) r) (not (eobp)))
           (if (latex/do-auto-fill-p)
               (LaTeX-fill-paragraph)
-            (end-of-environment)
+            (latex/end-of-environment 1)
             (forward-line -1))
           (forward-line 1)
           (message message-string (line-number-at-pos (point)) (line-number-at-pos r))))))
