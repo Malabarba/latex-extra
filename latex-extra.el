@@ -91,6 +91,7 @@
 ;;; Code:
 (eval-when-compile (require 'tex))
 (eval-when-compile (require 'latex))
+(eval-when-compile (require 'tex-buf))
 
 (defconst latex-extra-version "1.0" "Version of the latex-extra.el package.")
 (defconst latex-extra-version-int 2 "Version of the latex-extra.el package, as an integer.")
@@ -113,67 +114,84 @@
     (replace-match rep nil nil)))
 (defun always-t (&rest x) "Return t." t)
 
-;;; Whitespace cleaning
-(defcustom latex/clean-up-whitespace t
-  "Type of whitespace to be erased by `latex/clean-fill-indent-environment'.
+;;; Environment navigation
+(defun end-of-environment (&optional N noerror nomark)
+  "Move just past the end of the current latex environment.
 
-Only excessive whitespace will be erased. That is, when there are
-two or more consecutive blank lines they are turned into one, and
-single blank lines are left untouched.
-
-This variable has 4 possible values:
-t:       Erases blank lines and spaces.
-'lines:  Erases blank lines only.
-'spaces: Erases spaces only.
-nil:     Doesn't erase any whitespace."
-  :type '(choice (const :tag "Erases blank lines and spaces." t)
-                 (const :tag "Erases blank lines only." lines)
-                 (const :tag "Erases spaces only." spaces)
-                 (const :tag "Doesn't erase any whitespace." nil))
-  :group 'latex-extra
-  :package-version '(latex-extra . "1.0"))
-
-(defun latex/clean-fill-indent-environment ()
-  "Severely reorganise whitespace in current environment.
-
-Performs the following actions (on current environment):
- 1. Turn multiple new-lines and spaces into single new-lines and
-    spaces, according to `latex/clean-up-whitespace'.
- 2. Fill text, except inside environments given by
-    `latex/no-autofill-environments'.
- 3. Indent everything."
+Leaves point outside the environment."
   (interactive)
-  (when latex/clean-up-whitespace
-    (save-excursion
-      (message "Cleaning up...")
-      (LaTeX-mark-environment)
-      (let ((l (region-beginning))
-            (r (region-end)))
-        (unless (eq latex/clean-up-whitespace 'lines)  (replace-regexp-everywhere "  +" " "))
-        (unless (eq latex/clean-up-whitespace 'spaces) (replace-regexp-everywhere "\n\n\n+" "\n\n")))))
-  (unless (eq latex/no-autofill-environments 'all)
-    (save-excursion
-      (LaTeX-mark-environment)
-      (let* ((l (region-beginning))
-             (r (region-end))
-             (size (number-to-string (length (number-to-string (line-number-at-pos r)))))
-             (message-string (concat "Filling line %" size "s / %" size "s.")))
-        (goto-char l)
-        (forward-line 1)
-        (while (and (<= (point) r) (not (eobp)))
-          (if (latex/do-auto-fill-p)
-              (LaTeX-fill-paragraph)
-            (end-of-environment)
-            (forward-line -1))
-          (forward-line 1)
-          (message message-string (line-number-at-pos (point)) (line-number-at-pos r))))))
-  (save-excursion
-    (message "Indenting...")
-    (LaTeX-mark-environment)
-    (let ((l (region-beginning))
-          (r (region-end)))
-      (indent-region l r)))
-  (message "Done."))
+  (unless (or nomark (region-active-p)) (push-mark))
+  (let ((start (point))
+        (begin-string (if (equal (char-syntax ?\\) ?w) "\\begin" "begin"))
+        (count (if (integerp N) N 1)))
+    (while (> count 0) 				;Search for matching \end
+      (if (not (re-search-forward "\\\\\\(begin\\|end\\)" (point-max) t))
+          (if noerror (setq count nil) (error "Not inside an environment? Moving back to %d" (goto-char start)))
+        (if (equal (thing-at-point 'word) begin-string) (incf count)
+          (decf count))))
+    (forward-sexp)
+    (while (looking-at " ") (forward-char 1))
+    (if (looking-at "\n") (forward-char 1))
+    (while (looking-at " ") (forward-char 1))
+    ;; (if (looking-at "\n") (forward-char 1))
+    ;; (LaTeX-back-to-indentation)
+    count))
+
+(defun forward-environment (&optional N nomark)
+  "Move to the \\end of the next \\begin, or to the \\end of the current environment (whichever comes first) N times.
+
+Never goes into deeper environments."
+  (interactive "p")
+  (unless (or nomark (region-active-p)) (push-mark))
+  (let ((start (point))
+        (begin-string (if (equal (char-syntax ?\\) ?w) "\\begin" "begin"))
+        (count (if (integerp N) N 1)))
+    (while (> count 0) (decf count)	;Search for matching \end
+           (if (not (re-search-forward
+                     "\\\\\\(begin\\|end\\)" (point-max) t))
+               (error "No next environment found! Moving back to %d"
+                      (goto-char start)))
+           (if (equal (thing-at-point 'word) begin-string)
+               (unless (end-of-environment nil t t)
+                 (error "Unmatched \\begin?"))
+             (forward-sexp)))))
+
+(defun beginning-of-environment (&optional N noerror nomark)
+  "Move to the beginning of the current latex environment.
+
+Leaves point outside the environment."
+  (interactive)
+  (unless (or nomark (region-active-p)) (push-mark))
+  (let ((start (point))
+        (count (if (integerp N) N 1))
+        (end-string (if (equal (char-syntax ?\\) ?w) "\\end" "end")))
+    (while (> count 0) 				;Search for matching \end
+      (if (not (re-search-backward "\\\\\\(begin\\|end\\)" (point-min) t))
+          (if noerror (setq count nil) (error "Not inside an environment? Moving back to %d" (goto-char start)))
+        (forward-char)
+        (if (equal (thing-at-point 'word) end-string) (incf count)
+          (decf count))
+        (backward-char)))
+    count))
+
+(defun backward-environment (&optional N nomark)
+  "Move to the \\begin of the next \\end, or to the \\begin of the current environment (whichever comes first) N times.
+
+Never goes into deeper environments."
+  (interactive "p")
+  (unless (or nomark (region-active-p)) (push-mark))
+  (let ((start (point))
+        (count (if (integerp N) N 1))
+        (end-string (if (equal (char-syntax ?\\) ?w) "\\end" "end")))
+    (while (> count 0) (decf count)	;Search for matching \begin
+           (if (not (re-search-backward "\\\\\\(begin\\|end\\)" (point-min) t))
+               (error "No next environment found! Moving back to %d" (goto-char start)))
+           (forward-char)
+           (if (equal (thing-at-point 'word) end-string)
+               (unless (beginning-of-environment nil t t)
+                 (error "Unmatched \\end? back to %d" (goto-char start)))
+             (backward-char)))))
+
 
 ;;; Section navigation
 (defcustom latex/section-hierarchy '("\\headerbox"
@@ -198,7 +216,7 @@ Header stands for any string listed in `latex/section-hierarchy'.
 
 Negative N goes backward."
   (interactive "p")
-  (goto-char (latex//find-nth-section-with-predicate n #'always-t)))
+  (goto-char (latex//find-nth-section-with-predicate n 'always-t)))
 
 (defun latex/previous-section (n)
   "Move N (or 1) headers backward.
@@ -215,7 +233,7 @@ Header stands for any string listed in `latex/section-hierarchy'.
 With prefix argument N, goes that many headers up the hierarchy.
 Negative N goes forward, but still goes \"up\" the hierarchy."
   (interactive "p")
-  (goto-char (latex//find-nth-section-with-predicate (- n) #'latex/section<)))
+  (goto-char (latex//find-nth-section-with-predicate (- n) 'latex/section<)))
 
 (defun latex/next-section-same-level (n)
   "Move N (or 1) headers forward.
@@ -224,7 +242,7 @@ Header stands for any string listed in `latex/section-hierarchy'.
 
 Negative N goes backward."
   (interactive "p")
-  (goto-char (latex//find-nth-section-with-predicate n #'latex/section<=)))
+  (goto-char (latex//find-nth-section-with-predicate n 'latex/section<=)))
 
 (defun latex/previous-section-same-level (n)
   "Move N (or 1) headers backward.
@@ -349,6 +367,68 @@ so, it inhibits automatic filling of the current paragraph."
 
 ;;;###autoload
 (add-hook 'LaTeX-mode-hook 'latex/setup-auto-fill)
+
+;;; Whitespace cleaning
+(defcustom latex/clean-up-whitespace t
+  "Type of whitespace to be erased by `latex/clean-fill-indent-environment'.
+
+Only excessive whitespace will be erased. That is, when there are
+two or more consecutive blank lines they are turned into one, and
+single blank lines are left untouched.
+
+This variable has 4 possible values:
+t:       Erases blank lines and spaces.
+'lines:  Erases blank lines only.
+'spaces: Erases spaces only.
+nil:     Doesn't erase any whitespace."
+  :type '(choice (const :tag "Erases blank lines and spaces." t)
+                 (const :tag "Erases blank lines only." lines)
+                 (const :tag "Erases spaces only." spaces)
+                 (const :tag "Doesn't erase any whitespace." nil))
+  :group 'latex-extra
+  :package-version '(latex-extra . "1.0"))
+
+(defun latex/clean-fill-indent-environment ()
+  "Severely reorganise whitespace in current environment.
+
+Performs the following actions (on current environment):
+ 1. Turn multiple new-lines and spaces into single new-lines and
+    spaces, according to `latex/clean-up-whitespace'.
+ 2. Fill text, except inside environments given by
+    `latex/no-autofill-environments'.
+ 3. Indent everything."
+  (interactive)
+  (when latex/clean-up-whitespace
+    (save-excursion
+      (message "Cleaning up...")
+      (LaTeX-mark-environment)
+      (let ((l (region-beginning))
+            (r (region-end)))
+        (unless (eq latex/clean-up-whitespace 'lines)  (replace-regexp-everywhere "  +" " "))
+        (unless (eq latex/clean-up-whitespace 'spaces) (replace-regexp-everywhere "\n\n\n+" "\n\n")))))
+  (unless (eq latex/no-autofill-environments 'all)
+    (save-excursion
+      (LaTeX-mark-environment)
+      (let* ((l (region-beginning))
+             (r (region-end))
+             (size (number-to-string (length (number-to-string (line-number-at-pos r)))))
+             (message-string (concat "Filling line %" size "s / %" size "s.")))
+        (goto-char l)
+        (forward-line 1)
+        (while (and (<= (point) r) (not (eobp)))
+          (if (latex/do-auto-fill-p)
+              (LaTeX-fill-paragraph)
+            (end-of-environment)
+            (forward-line -1))
+          (forward-line 1)
+          (message message-string (line-number-at-pos (point)) (line-number-at-pos r))))))
+  (save-excursion
+    (message "Indenting...")
+    (LaTeX-mark-environment)
+    (let ((l (region-beginning))
+          (r (region-end)))
+      (indent-region l r)))
+  (message "Done."))
 
 ;;; Compilation
 (defcustom latex/view-after-compile t
@@ -480,11 +560,7 @@ else."
 
 ;;;###autoload
 (eval-after-load 'latex
-  (latex/setup-keybinds))
-
-(provide 'latex-extra)
-;;; latex-extra.el ends here.
-
+  '(latex/setup-keybinds))
 
 (provide 'latex-extra)
 
