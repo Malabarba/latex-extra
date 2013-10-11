@@ -11,9 +11,10 @@ categories:
 
 ## 1-Key Compilation ##
 
-Tired of hitting `C-c C-c` 4 times (latex, bibtex, latex, view) for
-the document to compile? This defines a much needed command that does
-**everything** at once, and even handles compilation errors!
+Tired of hitting `C-c C-c RET` 4 times (latex, bibtex, latex, view)
+for the document to compile? That's 12 keys! This defines a much
+needed command that does **everything** at once, and even handles
+compilation errors!
 
 - `C-c C-a` **=>** `latex/compile-commands-until-done`
 
@@ -56,8 +57,7 @@ text, not equations. To use this improvement, just activate
 It also defines a new command:  
 
 - `C-c C-q` **=>** `latex/clean-fill-indent-environment`  
-Completely cleans up the entire current environment. This involves:
-
-1. Removing extraneous spaces and blank lines.
-2. Filling text (and only text, not equations).
-3. Indenting everything.
+  Completely cleans up the entire current environment. This involves:
+  1. Removing extraneous spaces and blank lines.
+  2. Filling text (and only text, not equations).
+  3. Indenting everything.
