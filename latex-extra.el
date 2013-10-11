@@ -13,8 +13,13 @@
 
 ;;; Commentary:
 ;; 
-;; Defines extra commands and keys for LaTeX-mode. The additions fall
-;; into the following three categories:
+;; Defines extra commands and keys for LaTeX-mode. To activate (after
+;; installing from melpa) just call
+;; 
+;;     (eval-after-load 'latex '(latex/setup-keybinds))
+;;
+;; The additions of this package fall into the following three
+;; categories:
 ;; 
 ;; ## 1-Key Compilation ##
 ;; 
@@ -73,10 +78,11 @@
 ;;
 ;; INSTALLATION
 ;;
-;; If you install from melpa: nothing necessary, should work anywhere
-;; you have latex-mode on.
+;; If you install from melpa: just use (as described above)
 ;;
-;; If you install manually:
+;;    (eval-after-load 'latex '(latex/setup-keybinds))
+;;
+;; If you install manually, first require it, then use the code above.
 ;;     (require 'latex-extra)
 
 ;;; License:
@@ -369,9 +375,6 @@ so, it inhibits automatic filling of the current paragraph."
   "Set the function used to fill a paragraph to `latex/auto-fill-function'."
   (setq auto-fill-function 'latex/auto-fill-function))
 
-;;;###autoload
-(add-hook 'LaTeX-mode-hook 'latex/setup-auto-fill)
-
 ;;; Whitespace cleaning
 (defcustom latex/clean-up-whitespace t
   "Type of whitespace to be erased by `latex/clean-fill-indent-environment'.
@@ -541,12 +544,6 @@ else."
   :package-version '(latex-extra . "1.0"))
 
 ;;;###autoload
-(defadvice LaTeX-preview-setup (after latex/after-LaTeX-preview-setup-advice () activate)
-  "Move the preview map to \"p\" so that we free up \"\"."
-  (when latex/override-preview-map
-    (define-key LaTeX-mode-map "" 'latex/previous-section)
-    (define-key LaTeX-mode-map "p"  'preview-map)))
-
 (defun latex/setup-keybinds ()
   "Define our key binds."
   (interactive)
@@ -555,7 +552,6 @@ else."
   (define-key LaTeX-mode-map "\C-\M-a" 'latex/beginning-of-environment)
   (define-key LaTeX-mode-map "\C-\M-e" 'latex/end-of-environment)
   (define-key LaTeX-mode-map ""   'latex/beginning-of-line)
-  ;; (define-key LaTeX-mode-map "" 'latex/do-compile)
   (define-key LaTeX-mode-map "" 'latex/compile-commands-until-done)
   (define-key LaTeX-mode-map "" 'latex/clean-fill-indent-environment)
   (define-key LaTeX-mode-map "" 'latex/up-section)
@@ -564,11 +560,13 @@ else."
   (define-key LaTeX-mode-map "" 'latex/previous-section-same-level)
   (when latex/override-preview-map
     (define-key LaTeX-mode-map "" 'latex/previous-section)
-    (define-key LaTeX-mode-map "p"  'preview-map)))
-
-;;;###autoload
-(eval-after-load 'latex
-  '(latex/setup-keybinds))
+    (define-key LaTeX-mode-map "p"  'preview-map))
+  (add-hook 'LaTeX-mode-hook 'latex/setup-auto-fill)
+  (defadvice LaTeX-preview-setup (after latex/after-LaTeX-preview-setup-advice () activate)
+    "Move the preview map to \"p\" so that we free up \"\"."
+    (when latex/override-preview-map
+      (define-key LaTeX-mode-map "" 'latex/previous-section)
+      (define-key LaTeX-mode-map "p"  'preview-map))))
 
 (provide 'latex-extra)
 
