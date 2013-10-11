@@ -181,7 +181,7 @@ Never goes into deeper environments."
         (count (abs N))
         (direction (if (< N 0) -1 1)))
     (while (and (> count 0)
-                (re-search-forward "\\\\\\(begin\\|end\\)"
+                (re-search-forward "\\\\\\(begin\\|end\\)\\b"
                                    nil t direction))
       (decf count)
       (if (latex//found-undesired-string direction)
