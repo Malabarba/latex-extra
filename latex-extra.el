@@ -385,6 +385,7 @@ so, it inhibits automatic filling of the current paragraph."
 
 (defun latex/setup-auto-fill ()
   "Set the function used to fill a paragraph to `latex/auto-fill-function'."
+  (interactive)
   (setq auto-fill-function 'latex/auto-fill-function))
 
 ;;; Whitespace cleaning
@@ -559,6 +560,7 @@ else."
 (defun latex/setup-keybinds ()
   "Define our key binds."
   (interactive)
+  (add-hook 'LaTeX-mode-hook 'latex/setup-auto-fill)  
   (define-key LaTeX-mode-map "\C-\M-f" 'latex/forward-environment)
   (define-key LaTeX-mode-map "\C-\M-b" 'latex/backward-environment)
   (define-key LaTeX-mode-map "\C-\M-a" 'latex/beginning-of-environment)
