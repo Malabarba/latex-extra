@@ -1,8 +1,13 @@
 latex-extra
 =======
 
-Defines extra commands and keys for LaTeX-mode. The additions fall
-into the following three categories:
+Defines extra commands and keys for LaTeX-mode. To activate, install
+from melpa and call
+
+    (eval-after-load 'latex '(latex/setup-keybinds))
+
+The additions of this package fall into the following three
+categories:
 
 ## 1-Key Compilation ##
 
@@ -30,10 +35,10 @@ Like next-section, except it skips anything that's "lower-level" then
 the current one. For instance, if you're inside a subsection it finds
 the next subsection (or higher), skipping any subsubsections or
 paragraphs.
-- `C-M-f` **=>** `latex/forward-environment`
+- `C-M-f` **=>** `latex/forward-environment`  
 Skip over the next environment, or exit the current one, whichever
 comes first. 
-- `C-M-e` **=>** `latex/end-of-environment`
+- `C-M-e` **=>** `latex/end-of-environment`  
 Exit the current environment, and skip over some whitespace
 afterwards. (Like `LaTeX-find-matching-end`, but a little more useful.)
 - `C-M-b` **=>** `latex/backward-environment`
