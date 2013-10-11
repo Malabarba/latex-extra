@@ -32,9 +32,9 @@ Goes backward to the previous section-like command containing this
 one. For instance, if you're inside a subsection it goes up to the
 section that contains it.
 - `C-c C-f` **=>** `latex/next-section-same-level`  
-Like next-section, except it skips anything that's "lower-level" then
-the current one. For instance, if you're inside a subsection it finds
-the next subsection (or higher), skipping any subsubsections or
+Like `next-section`, except it skips anything that's "lower-level"
+then the current one. For instance, if you're inside a subsection it
+finds the next subsection (or higher), skipping any subsubsections or
 paragraphs.
 - `C-M-f` **=>** `latex/forward-environment`  
 Skip over the next environment, or exit the current one, whichever
