@@ -493,7 +493,7 @@ If there are errors, call `TeX-next-error' instead of viewing.
 
 With prefix argument CLEAN-FIRST, removes the output and
 auxiliary files before starting (by running (TeX-clean t)). This
-essentially runs the compilation in a clean slate.
+essentially runs the compilation on a clean slate.
 
 This command repeatedly runs `TeX-command-master' until: (1) we
 reach the VIEW command, (2) an error is found, or (3) the limit
@@ -504,29 +504,28 @@ is wrong).
 `latex/view-skip-confirmation' can customize this command."
   (interactive "P")
   (when clean-first (TeX-clean t))
-  (let* ((thebuffer (buffer-name))
-         ;; (theplace (point))
+  (let* ((initial-buffer (buffer-name))
          (TeX-process-asynchronous nil)
          (master-file (TeX-master-file))
-         (nextCmd (latex/command-default master-file))
+         (next-command (latex/command-default master-file))
          (counter 0))
-    (while (and ;; nextCmd
+    (while (and 
             (> counter -1)
-            (not (equal nextCmd TeX-command-Show)))
+            (not (equal next-command TeX-command-Show)))
       (when (> counter latex/max-runs)
         (error "Number of commands run exceeded %d (%S). Something is probably wrong"
                latex/max-runs 'latex/max-runs))
-      (message "%d Doing: %s" (incf counter) nextCmd)
-      (set-buffer thebuffer)
-      (TeX-command nextCmd 'TeX-master-file)
+      (message "%d Doing: %s" (incf counter) next-command)
+      (set-buffer initial-buffer)
+      (TeX-command next-command 'TeX-master-file)
       (if (null (plist-get TeX-error-report-switches (intern master-file)))
-          (setq nextCmd (latex/command-default master-file))
+          (setq next-command (latex/command-default master-file))
         (setq counter -1)
         (when (or latex/next-error-skip-confirmation
                   (y-or-n-p "Error found. Visit it? "))
           (TeX-next-error t))))
     (when (>= counter 0) ;; 
-      (set-buffer thebuffer)
+      (set-buffer initial-buffer)
       (if latex/view-skip-confirmation
           (TeX-view)
         (TeX-command TeX-command-Show 'TeX-master-file)))))
