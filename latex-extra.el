@@ -101,6 +101,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.2.1 - 20131011 - Fixed previous section
 ;; 1.2.1 - 20131011 - Rename latex-customize
 ;;; Code:
 (eval-when-compile (require 'tex))
@@ -234,7 +235,11 @@ Negative N goes backward."
 
 Header stands for any string listed in `latex/section-hierarchy'."
   (interactive "p")
-  (latex/next-section (- n)))
+  (let ((sap (thing-at-point 'symbol)))
+    (when (and (stringp sap) (string-match (latex/section-regexp) sap))
+      (skip-chars-backward "[:alpha:]")
+      (forward-char -2)))
+  (latex/next-section (- n 1)))
 
 (defun latex/up-section (n)
   "Move backward to the header that contains the current one.
@@ -306,20 +311,26 @@ determined by the positivity of N.
                   (progn
                     (setq sap (thing-at-point 'symbol))
                     (when (looking-at "\\\\")
-                      (unless (eobp) (forward-char 1)))
+                      (unless (or (eobp) (= amount 0))
+                        (forward-char 1)))
                     (while (and (> amount 0)
-                                (search-forward-regexp (latex/section-regexp) nil :noerror direction))
+                                (search-forward-regexp (latex/section-regexp)
+                                                       nil :noerror direction))
                       (save-match-data
                         (when (eval (list pred sap (thing-at-point 'symbol)))
                           (setq sap (thing-at-point 'symbol))
                           (decf amount))))
-                    (if (= amount n)
-                        (message "No sections %s! (of the desired level)" (if (> direction 0) "below" "above"))
-                      (unless (= amount 0) (message "Reached the %s." (if (> direction 0) "bottom" "top")))
-                      (push-mark)
-                      (match-beginning 0)))
+                    (if (= amount 0)
+                        ;; Finished moving
+                        (match-beginning 0)
+                      ;; Didn't finish moving
+                      (if (= amount n)
+                          (message "No sections %s! (satisfying %S)"
+                                   (if (> direction 0) "below" "above") pred)
+                        (message "Reached the %s." (if (> direction 0) "bottom" "top")))))
                 (message "Not inside a header."))))))
-    (if (null (number-or-marker-p result)) (point)
+    (if (null (number-or-marker-p result))
+        (point)
       (push-mark)
       result)))
 
@@ -504,6 +515,7 @@ is wrong).
 `latex/view-skip-confirmation' can customize this command."
   (interactive "P")
   (when clean-first (TeX-clean t))
+  (message "Compilation started.")
   (let* ((initial-buffer (buffer-name))
          (TeX-process-asynchronous nil)
          (master-file (TeX-master-file))
