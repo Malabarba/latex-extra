@@ -42,8 +42,8 @@ comes first.
 - `C-M-e` **=>** `latex/end-of-environment`  
 Exit the current environment, and skip over some whitespace
 afterwards. (Like `LaTeX-find-matching-end`, but a little more useful.)
-- `C-M-b` **=>** `latex/backward-environment`
-- `C-M-a` **=>** `latex/beginning-of-environment`
+- `C-M-b` **=>** `latex/backward-environment`  
+- `C-M-a` **=>** `latex/beginning-of-environment`  
 - `C-c C-p` **=>** `latex/previous-section`  
 - `C-c C-b` **=>** `latex/previous-section-same-level`  
 Same as above, but go backward.

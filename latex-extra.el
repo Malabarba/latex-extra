@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 1.1
+;; Version: 1.2.1
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -101,20 +101,21 @@
 ;; 
 
 ;;; Change Log:
+;; 1.2.1 - 20131011 - Rename latex-customize
 ;;; Code:
 (eval-when-compile (require 'tex))
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.1" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 3 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.2.1" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 4 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
   (message "Your latex-version is: %s, and your emacs version is: %s.\nPlease include this in your report!"
            latex-extra-version emacs-version)
   (browse-url "https://github.com/BruceConnor/latex-extra/issues/new"))
-(defun latex-customize ()
+(defun latex-extra-customize ()
   "Open the customisation menu in the `latex-extra' group."
   (interactive)
   (customize-group 'latex-extra t))
