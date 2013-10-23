@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 1.2.1
+;; Version: 1.2.2
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -101,6 +101,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.2.2 - 20131023 - Fix for latex/clean-fill-indent-environment
 ;; 1.2.1 - 20131011 - Fixed previous section
 ;; 1.2.1 - 20131011 - Rename latex-customize
 ;;; Code:
