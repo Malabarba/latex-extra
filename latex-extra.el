@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 1.2.2
+;; Version: 1.2.3
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -101,6 +101,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.2.3 - 20131025 - More fix for latex/clean-fill-indent-environment
 ;; 1.2.2 - 20131023 - Fix for latex/clean-fill-indent-environment
 ;; 1.2.1 - 20131011 - Fixed previous section
 ;; 1.2.1 - 20131011 - Rename latex-customize
@@ -109,8 +110,8 @@
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.2.1" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 4 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.2.3" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 5 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
@@ -409,7 +410,7 @@ nil:     Doesn't erase any whitespace."
   :group 'latex-extra
   :package-version '(latex-extra . "1.0"))
 
-(defun latex/clean-fill-indent-environment ()
+(defun latex/clean-fill-indent-environment (&optional indent)
   "Severely reorganise whitespace in current environment.
 
 Performs the following actions (on current environment):
@@ -419,36 +420,42 @@ Performs the following actions (on current environment):
     `latex/no-autofill-environments'.
  3. Indent everything."
   (interactive)
-  (when latex/clean-up-whitespace
+  (save-match-data
     (save-excursion
-      (message "Cleaning up...")
-      (LaTeX-mark-environment)
-      (let ((l (region-beginning))
-            (r (region-end)))
-        (unless (eq latex/clean-up-whitespace 'lines)  (replace-regexp-everywhere "  +" " "))
-        (unless (eq latex/clean-up-whitespace 'spaces) (replace-regexp-everywhere "\n\n\n+" "\n\n")))))
-  (unless (eq latex/no-autofill-environments 'all)
-    (save-excursion
-      (LaTeX-mark-environment)
-      (let* ((l (region-beginning))
-             (r (region-end))
-             (size (number-to-string (length (number-to-string (line-number-at-pos r)))))
-             (message-string (concat "Filling line %" size "s / %" size "s.")))
-        (goto-char l)
+      (save-restriction
+        (LaTeX-mark-environment)
+        (setq indent (or indent (- (point) (line-beginning-position))))
+        (narrow-to-region (region-beginning) (region-end))
+        ;; Whitespace
+        (goto-char (point-min))
+        (when latex/clean-up-whitespace
+          (message "Cleaning up...")
+          (unless (eq latex/clean-up-whitespace 'lines)  (replace-regexp-everywhere "  +$" ""))
+          (unless (eq latex/clean-up-whitespace 'lines)  (replace-regexp-everywhere "  +\\([^% ]\\)" " \\1"))
+          (unless (eq latex/clean-up-whitespace 'spaces) (replace-regexp-everywhere "\n\n\n+" "\n\n")))
+        ;; Autofill
+        (goto-char (point-min))
+        (unless (eq latex/no-autofill-environments 'all)
+          (let* ((size (number-to-string (length (number-to-string (line-number-at-pos (point-max))))))
+                 (message-string (concat "Filling line %" size "s / %" size "s.")))
+            (goto-char (point-min))
+            (forward-line 1)
+            (while (not (eobp))
+              (if (latex/do-auto-fill-p)
+                  (LaTeX-fill-paragraph)
+                (latex/end-of-environment 1)
+                ;; (forward-line -1)
+                )
+              (forward-line 1)
+              (message message-string (line-number-at-pos (point)) (line-number-at-pos (point-max))))))
+        ;; Indentation
+        (message "Indenting...")
+        (goto-char (point-min))
+        (insert (make-string indent ?\ ))
+        (setq indent (point))
         (forward-line 1)
-        (while (and (<= (point) r) (not (eobp)))
-          (if (latex/do-auto-fill-p)
-              (LaTeX-fill-paragraph)
-            (latex/end-of-environment 1)
-            (forward-line -1))
-          (forward-line 1)
-          (message message-string (line-number-at-pos (point)) (line-number-at-pos r))))))
-  (save-excursion
-    (message "Indenting...")
-    (LaTeX-mark-environment)
-    (let ((l (region-beginning))
-          (r (region-end)))
-      (indent-region l r)))
+        (indent-region (point) (point-max))
+        (delete-region (point-min) indent))))
   (message "Done."))
 
 ;;; Compilation
