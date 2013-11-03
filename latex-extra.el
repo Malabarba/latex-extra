@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 1.2.3
+;; Version: 1.3
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -101,17 +101,20 @@
 ;; 
 
 ;;; Change Log:
+;; 1.3   - 20131103 - Use texmathp instead of manually parsing for math
+;; 1.3   - 20131103 - autoload latex/setup-auto-fill
 ;; 1.2.3 - 20131025 - More fix for latex/clean-fill-indent-environment
 ;; 1.2.2 - 20131023 - Fix for latex/clean-fill-indent-environment
 ;; 1.2.1 - 20131011 - Fixed previous section
 ;; 1.2.1 - 20131011 - Rename latex-customize
 ;;; Code:
+
 (eval-when-compile (require 'tex))
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.2.3" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 5 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.3" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 6 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
@@ -357,14 +360,6 @@ determined by the positivity of N.
       (beginning-of-line))))
 
 ;;; Autofilling
-(defcustom latex/no-autofill-environments
-  '("equation" "multline" "align" "aligned" "table" "split" "eqnarray")
-  "A list of LaTeX environment names in which `auto-fill-mode' should be inhibited."
-  :type '(choice (repeat string)
-                 (const :tag "Never autofill." 'all))
-  :group 'latex-extra
-  :package-version '(latex-extra . "1.0"))
-
 (defun latex/auto-fill-function ()
   "Perform auto-fill unless point is inside an unsuitable environment.
 
@@ -376,15 +371,9 @@ so, it inhibits automatic filling of the current paragraph."
 
 (defun latex/do-auto-fill-p ()
   "Decide whether to auto-fill in current environment."
-  (let ((do-auto-fill t)
-        (current-environment "")
-        (level 0))
-    (while (and do-auto-fill (not (string= current-environment "document")))
-      (setq level (1+ level)
-            current-environment (LaTeX-current-environment level)
-            do-auto-fill (not (member current-environment latex/no-autofill-environments))))
-    do-auto-fill))
+  (null (texmathp)))
 
+;;;###autoload
 (defun latex/setup-auto-fill ()
   "Set the function used to fill a paragraph to `latex/auto-fill-function'."
   (interactive)
