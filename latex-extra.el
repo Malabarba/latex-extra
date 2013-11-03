@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 1.3.2
+;; Version: 1.3.3
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -101,6 +101,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.3.3 - 20131103 - latex/should-auto-fill-$ variable
 ;; 1.3   - 20131103 - latex/cleanup-do-fill controls whether to fill
 ;; 1.3   - 20131103 - Use texmathp instead of manually parsing for math
 ;; 1.3   - 20131103 - autoload latex/setup-auto-fill
@@ -114,8 +115,8 @@
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.3.2" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 7 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.3.3" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 8 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
@@ -370,9 +371,20 @@ so, it inhibits automatic filling of the current paragraph."
   (when (latex/do-auto-fill-p)
     (do-auto-fill)))
 
+(defcustom latex/should-auto-fill-$ t
+  "If non-nil, inline math ($x=1$) will get auto-filled like text."
+  :type 'boolean
+  :group 'latex-extra
+  :package-version '(latex-extra . "1.3.2"))
+
 (defun latex/do-auto-fill-p ()
   "Decide whether to auto-fill in current environment."
-  (null (texmathp)))
+  (if (texmathp)
+      (if (and (stringp (car-safe texmathp-why))
+               (string= (car texmathp-why) "$"))
+          latex/should-auto-fill-$
+        nil)
+    t))
 
 ;;;###autoload
 (defun latex/setup-auto-fill ()
