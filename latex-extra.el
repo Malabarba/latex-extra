@@ -101,6 +101,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.3   - 20131103 - latex/cleanup-do-fill controls whether to fill
 ;; 1.3   - 20131103 - Use texmathp instead of manually parsing for math
 ;; 1.3   - 20131103 - autoload latex/setup-auto-fill
 ;; 1.2.3 - 20131025 - More fix for latex/clean-fill-indent-environment
@@ -399,14 +400,19 @@ nil:     Doesn't erase any whitespace."
   :group 'latex-extra
   :package-version '(latex-extra . "1.0"))
 
+(defcustom latex/cleanup-do-fill t
+  "If nil, `latex/clean-fill-indent-environment' won't perform text-filling."
+  :type 'boolean
+  :group 'latex-extra
+  :package-version '(latex-extra . "1.3"))
+
 (defun latex/clean-fill-indent-environment (&optional indent)
   "Severely reorganise whitespace in current environment.
 
 Performs the following actions (on current environment):
  1. Turn multiple new-lines and spaces into single new-lines and
     spaces, according to `latex/clean-up-whitespace'.
- 2. Fill text, except inside environments given by
-    `latex/no-autofill-environments'.
+ 2. Fill text, unless `latex/cleanup-do-fill' is nil.
  3. Indent everything."
   (interactive)
   (save-match-data
@@ -424,7 +430,7 @@ Performs the following actions (on current environment):
           (unless (eq latex/clean-up-whitespace 'spaces) (replace-regexp-everywhere "\n\n\n+" "\n\n")))
         ;; Autofill
         (goto-char (point-min))
-        (unless (eq latex/no-autofill-environments 'all)
+        (unless latex/cleanup-dont-autofill
           (let* ((size (number-to-string (length (number-to-string (line-number-at-pos (point-max))))))
                  (message-string (concat "Filling line %" size "s / %" size "s.")))
             (goto-char (point-min))
