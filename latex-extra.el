@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 1.3
+;; Version: 1.3.2
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -114,8 +114,8 @@
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.3" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 6 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.3.2" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 7 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
@@ -430,7 +430,7 @@ Performs the following actions (on current environment):
           (unless (eq latex/clean-up-whitespace 'spaces) (replace-regexp-everywhere "\n\n\n+" "\n\n")))
         ;; Autofill
         (goto-char (point-min))
-        (unless latex/cleanup-dont-autofill
+        (when latex/cleanup-do-fill
           (let* ((size (number-to-string (length (number-to-string (line-number-at-pos (point-max))))))
                  (message-string (concat "Filling line %" size "s / %" size "s.")))
             (goto-char (point-min))
