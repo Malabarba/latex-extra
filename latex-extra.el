@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 1.3.3
+;; Version: 1.4
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -101,22 +101,23 @@
 ;; 
 
 ;;; Change Log:
-;; 1.3.3 - 20131103 - latex/should-auto-fill-$ variable
-;; 1.3   - 20131103 - latex/cleanup-do-fill controls whether to fill
-;; 1.3   - 20131103 - Use texmathp instead of manually parsing for math
-;; 1.3   - 20131103 - autoload latex/setup-auto-fill
-;; 1.2.3 - 20131025 - More fix for latex/clean-fill-indent-environment
-;; 1.2.2 - 20131023 - Fix for latex/clean-fill-indent-environment
-;; 1.2.1 - 20131011 - Fixed previous section
-;; 1.2.1 - 20131011 - Rename latex-customize
+;; 1.4   - 2013/11/12 - Small fix for latex/compile-commands-until-done after bibtex.
+;; 1.3.3 - 2013/11/03 - latex/should-auto-fill-$ variable
+;; 1.3   - 2013/11/03 - latex/cleanup-do-fill controls whether to fill
+;; 1.3   - 2013/11/03 - Use texmathp instead of manually parsing for math
+;; 1.3   - 2013/11/03 - autoload latex/setup-auto-fill
+;; 1.2.3 - 2013/10/25 - More fix for latex/clean-fill-indent-environment
+;; 1.2.2 - 2013/10/23 - Fix for latex/clean-fill-indent-environment
+;; 1.2.1 - 2013/10/11 - Fixed previous section
+;; 1.2.1 - 2013/10/11 - Rename latex-customize
 ;;; Code:
 
 (eval-when-compile (require 'tex))
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.3.3" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 8 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.4" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 9 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
@@ -547,7 +548,9 @@ is wrong).
       (set-buffer initial-buffer)
       (TeX-command next-command 'TeX-master-file)
       (if (null (plist-get TeX-error-report-switches (intern master-file)))
-          (setq next-command (latex/command-default master-file))
+          (if (string= next-command "BibTeX")
+              (setq next-command "LaTeX")
+            (setq next-command (latex/command-default master-file)))
         (setq counter -1)
         (when (or latex/next-error-skip-confirmation
                   (y-or-n-p "Error found. Visit it? "))
