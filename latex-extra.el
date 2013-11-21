@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 1.5
+;; Version: 1.6
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -101,6 +101,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.6 - 2013/11/21 - latex/clean-fill-indent-environment now marks sections as well as environments.
 ;; 1.5   - 2013/11/21 - Add a couple of LaTeX-clean-intermediate-suffixes.
 ;; 1.4   - 2013/11/12 - Small fix for latex/compile-commands-until-done after bibtex.
 ;; 1.3.3 - 2013/11/03 - latex/should-auto-fill-$ variable
@@ -117,8 +118,8 @@
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.5" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 10 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.6" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 11 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
@@ -432,7 +433,10 @@ Performs the following actions (on current environment):
   (save-match-data
     (save-excursion
       (save-restriction
-        (LaTeX-mark-environment)
+        (unless (region-active-p)
+          (latex//mark-current-thing))
+        (when (> (point) (mark))
+          (exchange-point-and-mark))
         (setq indent (or indent (- (point) (line-beginning-position))))
         (narrow-to-region (region-beginning) (region-end))
         ;; Whitespace
@@ -451,11 +455,9 @@ Performs the following actions (on current environment):
             (forward-line 1)
             (while (not (eobp))
               (if (latex/do-auto-fill-p)
-                  (LaTeX-fill-paragraph)
-                (latex/end-of-environment 1)
-                ;; (forward-line -1)
-                )
-              (forward-line 1)
+                  (progn (LaTeX-fill-paragraph)
+                         (forward-line 1))
+                (latex/end-of-environment 1))
               (message message-string (line-number-at-pos (point)) (line-number-at-pos (point-max))))))
         ;; Indentation
         (message "Indenting...")
@@ -466,6 +468,13 @@ Performs the following actions (on current environment):
         (indent-region (point) (point-max))
         (delete-region (point-min) indent))))
   (message "Done."))
+
+(defun latex//mark-current-thing ()
+  "Mark current section or environment, whichever comes first."
+  (if (> (save-excursion (LaTeX-find-matching-begin) (point))  
+         (save-excursion (latex/previous-section 1) (point)))  
+      (LaTeX-mark-environment)
+    (LaTeX-mark-section)))
 
 ;;; Compilation
 (defcustom latex/view-after-compile t
