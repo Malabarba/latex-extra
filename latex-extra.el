@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 1.4
+;; Version: 1.5
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -101,6 +101,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.5   - 2013/11/21 - Add a couple of LaTeX-clean-intermediate-suffixes.
 ;; 1.4   - 2013/11/12 - Small fix for latex/compile-commands-until-done after bibtex.
 ;; 1.3.3 - 2013/11/03 - latex/should-auto-fill-$ variable
 ;; 1.3   - 2013/11/03 - latex/cleanup-do-fill controls whether to fill
@@ -116,8 +117,8 @@
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.4" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 9 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.5" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 10 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
@@ -578,6 +579,8 @@ else."
 (defun latex/setup-keybinds ()
   "Define our key binds."
   (interactive)
+  (add-to-list 'LaTeX-clean-intermediate-suffixes "\\.tdo") ;todonotes package
+  (add-to-list 'LaTeX-clean-intermediate-suffixes "Notes\\.bib") ;revtex package
   (add-hook 'LaTeX-mode-hook 'latex/setup-auto-fill)  
   (define-key LaTeX-mode-map "\C-\M-f" 'latex/forward-environment)
   (define-key LaTeX-mode-map "\C-\M-b" 'latex/backward-environment)
