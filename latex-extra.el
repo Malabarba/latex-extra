@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 1.6
+;; Version: 1.7
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -101,7 +101,8 @@
 ;; 
 
 ;;; Change Log:
-;; 1.6 - 2013/11/21 - latex/clean-fill-indent-environment now marks sections as well as environments.
+;; 1.7   - 2013/11/25 - latex/override-font-map.
+;; 1.6   - 2013/11/21 - latex/clean-fill-indent-environment now marks sections as well as environments.
 ;; 1.5   - 2013/11/21 - Add a couple of LaTeX-clean-intermediate-suffixes.
 ;; 1.4   - 2013/11/12 - Small fix for latex/compile-commands-until-done after bibtex.
 ;; 1.3.3 - 2013/11/03 - latex/should-auto-fill-$ variable
@@ -118,8 +119,8 @@
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.6" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 11 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.7" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 12 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
@@ -584,6 +585,33 @@ else."
   :group 'latex-extra
   :package-version '(latex-extra . "1.0"))
 
+(defun latex/-rebind-font-list ()
+  "Make add keys to `TeX-font-list' that don't use control."
+  (when (boundp 'TeX-font-list)
+    (mapc (lambda (x)
+            (when (< (car x) 97)
+              (setq LaTeX-font-list
+                    (append (list (cons (+ 96 (car x)) (cdr x)))
+                            LaTeX-font-list))))
+          LaTeX-font-list)))
+
+(defcustom latex/override-font-map t
+  "Should we rebind `TeX-font' to \"C-c f\"?
+
+This is necessary because the usual keybind conflicts with
+`latex/next-section-same-level'. If this is non-nil, we also
+reconfigure `TeX-font-list' so that you can insert fonts without
+holding control.
+
+If you set this to nil, we won't bind the command
+`latex/next-section-same-level' to anything (it would be usually
+bound to \"C-c C-f\"), so it will be up to you to bind it to
+something else."
+  :type 'boolean
+  :group 'latex-extra
+  :package-version '(latex-extra . "1.7"))
+(defvaralias 'latex/override-font-list 'latex/override-font-map)
+
 ;;;###autoload
 (defun latex/setup-keybinds ()
   "Define our key binds."
@@ -600,17 +628,22 @@ else."
   (define-key LaTeX-mode-map "" 'latex/clean-fill-indent-environment)
   (define-key LaTeX-mode-map "" 'latex/up-section)
   (define-key LaTeX-mode-map "" 'latex/next-section)
-  (define-key LaTeX-mode-map "" 'latex/next-section-same-level)
   (define-key LaTeX-mode-map "" 'latex/previous-section-same-level)
+  (when latex/override-font-map
+    (message "%S changed to \"C-c f\"." 'TeX-font)
+    (define-key LaTeX-mode-map "" 'latex/next-section-same-level)
+    (define-key LaTeX-mode-map "f"  'TeX-font))
+  (latex/-rebind-font-list)
   (when latex/override-preview-map
+    (message "%S changed to \"C-c p\"." 'preview-map)
     (define-key LaTeX-mode-map "" 'latex/previous-section)
     (define-key LaTeX-mode-map "p"  'preview-map))
-  (add-hook 'LaTeX-mode-hook 'latex/setup-auto-fill)
   (defadvice LaTeX-preview-setup (after latex/after-LaTeX-preview-setup-advice () activate)
     "Move the preview map to \"p\" so that we free up \"\"."
     (when latex/override-preview-map
       (define-key LaTeX-mode-map "" 'latex/previous-section)
-      (define-key LaTeX-mode-map "p"  'preview-map))))
+      (define-key LaTeX-mode-map "p"  'preview-map)))
+  (add-hook 'LaTeX-mode-hook 'latex/setup-auto-fill))
 
 (provide 'latex-extra)
 
