@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 1.7
+;; Version: 1.7.1
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -101,6 +101,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.7.1 - 2013/11/29 - latex/do-auto-fill-p also knows "\\(".
 ;; 1.7   - 2013/11/25 - latex/override-font-map.
 ;; 1.6   - 2013/11/21 - latex/clean-fill-indent-environment now marks sections as well as environments.
 ;; 1.5   - 2013/11/21 - Add a couple of LaTeX-clean-intermediate-suffixes.
@@ -119,8 +120,8 @@
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.7" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 12 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.7.1" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 13 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
@@ -385,7 +386,8 @@ so, it inhibits automatic filling of the current paragraph."
   "Decide whether to auto-fill in current environment."
   (if (texmathp)
       (if (and (stringp (car-safe texmathp-why))
-               (string= (car texmathp-why) "$"))
+               (or (string= (car texmathp-why) "$")
+                   (string= (car texmathp-why) "\\(")))
           latex/should-auto-fill-$
         nil)
     t))
