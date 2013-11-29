@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 1.7.1
+;; Version: 1.7.2
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -101,6 +101,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.7.2 - 2013/11/29 - Only push-mark when interactive and region not active.
 ;; 1.7.1 - 2013/11/29 - latex/do-auto-fill-p also knows "\\(".
 ;; 1.7   - 2013/11/25 - latex/override-font-map.
 ;; 1.6   - 2013/11/21 - latex/clean-fill-indent-environment now marks sections as well as environments.
@@ -120,8 +121,8 @@
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.7.1" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 13 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.7.2" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 14 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
@@ -153,15 +154,23 @@
   (when (looking-at "\\[") (forward-sexp 1))
   (when (looking-at "{") (forward-sexp 1)))
 
-(defun latex/end-of-environment (&optional N nomark)
+(defun latex//maybe-push-mark (&optional do-push)
+  "push-mark, unless it is active."
+  (unless (region-active-p)
+    (when do-push (push-mark))))
+
+(defun latex/end-of-environment (&optional N do-push-mark)
   "Move just past the end of the current latex environment.
 
 Leaves point outside the environment.
 Similar to `LaTeX-find-matching-end', but it accepts
 numeric (prefix) argument N and skips some whitespace after the
-closing \"\\end\"."
-  (interactive "p")
-  (unless (or nomark (region-active-p)) (push-mark))
+closing \"\\end\".
+
+DO-PUSH-MARK defaults to t when interactive, but mark is only
+pushed if region isn't active."
+  (interactive "p\nd")
+  (latex//maybe-push-mark do-push-mark)
   (let ((start (point))
         (count (abs N))
         (direction 1)
@@ -185,12 +194,15 @@ closing \"\\end\"."
              (error "Unclosed \\begin?")
            (error "Unopened \\end?"))))))
 
-(defun latex/forward-environment (&optional N nomark)
+(defun latex/forward-environment (&optional N do-push-mark)
   "Move to the \\end of the next \\begin, or to the \\end of the current environment (whichever comes first) N times.
 
-Never goes into deeper environments."
+Never goes into deeper environments.
+
+DO-PUSH-MARK defaults to t when interactive, but mark is only
+pushed if region isn't active."
   (interactive "p")
-  (unless (or nomark (region-active-p)) (push-mark))
+  (latex//maybe-push-mark do-push-mark)
   (let ((start (point))
         (count (abs N))
         (direction (if (< N 0) -1 1)))
@@ -199,23 +211,29 @@ Never goes into deeper environments."
                                    nil t direction))
       (decf count)
       (if (latex//found-undesired-string direction)
-          (unless (latex/end-of-environment direction t)
+          (unless (latex/end-of-environment direction)
             (error "Unmatched \\begin?"))
         (latex//forward-arguments)))))
 
-(defun latex/beginning-of-environment (&optional N nomark)
+(defun latex/beginning-of-environment (&optional N do-push-mark)
   "Move to the beginning of the current latex environment.
 
-Leaves point outside the environment."
-  (interactive "p")
-  (latex/end-of-environment (- N) nomark))
+Leaves point outside the environment.
 
-(defun latex/backward-environment (&optional N nomark)
+DO-PUSH-MARK defaults to t when interactive, but mark is only
+pushed if region isn't active."
+  (interactive "p")
+  (latex/end-of-environment (- N) do-push-mark))
+
+(defun latex/backward-environment (&optional N do-push-mark)
   "Move to the \\begin of the next \\end, or to the \\begin of the current environment (whichever comes first) N times.
 
-Never goes into deeper environments."
+Never goes into deeper environments.
+
+DO-PUSH-MARK defaults to t when interactive, but mark is only
+pushed if region isn't active."
   (interactive "p")
-  (latex/forward-environment (- N) nomark))
+  (latex/forward-environment (- N) do-push-mark))
 
 ;;; Section navigation
 (defcustom latex/section-hierarchy '("\\headerbox"
@@ -233,51 +251,67 @@ Never goes into deeper environments."
   :group 'latex-extra
   :package-version '(latex-extra . "1.0"))
 
-(defun latex/next-section (n)
+(defun latex/next-section (n &optional do-push-mark)
   "Move N (or 1) headers forward.
 
 Header stands for any string listed in `latex/section-hierarchy'.
 
-Negative N goes backward."
-  (interactive "p")
-  (goto-char (latex//find-nth-section-with-predicate n 'always-t)))
+Negative N goes backward.
 
-(defun latex/previous-section (n)
+DO-PUSH-MARK defaults to t when interactive, but mark is only
+pushed if region isn't active."
+  (interactive "p\nd")
+  (goto-char (latex//find-nth-section-with-predicate n 'always-t do-push-mark)))
+
+(defun latex/previous-section (n &optional do-push-mark)
   "Move N (or 1) headers backward.
 
-Header stands for any string listed in `latex/section-hierarchy'."
-  (interactive "p")
-  (let ((sap (thing-at-point 'symbol)))
-    (when (and (stringp sap) (string-match (latex/section-regexp) sap))
-      (skip-chars-backward "[:alpha:]")
-      (forward-char -2)))
-  (latex/next-section (- n 1)))
+Header stands for any string listed in `latex/section-hierarchy'.
 
-(defun latex/up-section (n)
+DO-PUSH-MARK defaults to t when interactive, but mark is only
+pushed if region isn't active."
+  (interactive "p\nd")
+  (save-match-data
+    (let ((sap (thing-at-point 'symbol)))
+      (when (and (stringp sap) (string-match (latex/section-regexp) sap))
+        (backward-sexp 1)
+        (forward-char -1))))
+  (latex/next-section (- (- n 1)) do-push-mark))
+
+(defun latex/up-section (n &optional do-push-mark)
   "Move backward to the header that contains the current one.
 
 Header stands for any string listed in `latex/section-hierarchy'.
 
 With prefix argument N, goes that many headers up the hierarchy.
-Negative N goes forward, but still goes \"up\" the hierarchy."
-  (interactive "p")
-  (goto-char (latex//find-nth-section-with-predicate (- n) 'latex/section<)))
+Negative N goes forward, but still goes \"up\" the hierarchy.
 
-(defun latex/next-section-same-level (n)
+DO-PUSH-MARK defaults to t when interactive, but mark is only
+pushed if region isn't active."
+  (interactive "p\nd")
+  (goto-char (latex//find-nth-section-with-predicate (- n) 'latex/section< do-push-mark)))
+
+(defun latex/next-section-same-level (n &optional do-push-mark)
   "Move N (or 1) headers forward.
 
 Header stands for any string listed in `latex/section-hierarchy'.
 
-Negative N goes backward."
-  (interactive "p")
-  (goto-char (latex//find-nth-section-with-predicate n 'latex/section<=)))
+Negative N goes backward.
 
-(defun latex/previous-section-same-level (n)
+DO-PUSH-MARK defaults to t when interactive, but mark is only
+pushed if region isn't active."
+  (interactive "p\nd")
+  (goto-char (latex//find-nth-section-with-predicate n 'latex/section<= do-push-mark)))
+
+(defun latex/previous-section-same-level (n &optional do-push-mark)
   "Move N (or 1) headers backward.
 
-Header stands for any string listed in `latex/section-hierarchy'."
-  (interactive "p")
-  (latex/next-section-same-level (- n)))
+Header stands for any string listed in `latex/section-hierarchy'.
+
+DO-PUSH-MARK defaults to t when interactive, but mark is only
+pushed if region isn't active."
+  (interactive "p\nd")
+  (latex/next-section-same-level (- n) do-push-mark))
 
 (defun latex//impl-previous-section ()
   "Find the previous header, avoiding dependencies and chaining.
@@ -290,7 +324,7 @@ Used for implementation."
                (match-beginning 0))))))
     (if dest (goto-char dest) nil)))
 
-(defun latex//find-nth-section-with-predicate (n pred)
+(defun latex//find-nth-section-with-predicate (n pred do-push-mark)
   "Find Nth header satisfying predicate PRED, return the start of last match.
 
 If this function fails, it returns original point position (so
@@ -343,7 +377,7 @@ determined by the positivity of N.
                 (message "Not inside a header."))))))
     (if (null (number-or-marker-p result))
         (point)
-      (push-mark)
+      (latex//maybe-push-mark do-push-mark)
       result)))
 
 (defun latex/section<= (x y)
@@ -460,7 +494,11 @@ Performs the following actions (on current environment):
               (if (latex/do-auto-fill-p)
                   (progn (LaTeX-fill-paragraph)
                          (forward-line 1))
-                (latex/end-of-environment 1))
+                (if (and (stringp (car-safe texmathp-why))
+                         (string= (car texmathp-why) "\\["))
+                    (progn (search-forward "\\]")
+                           (forward-line 1))
+                  (latex/end-of-environment 1)))
               (message message-string (line-number-at-pos (point)) (line-number-at-pos (point-max))))))
         ;; Indentation
         (message "Indenting...")
