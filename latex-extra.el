@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 1.7.2
+;; Version: 1.7.3
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -101,6 +101,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.7.3 - 2013/12/01 - Fix next-section.
 ;; 1.7.2 - 2013/11/29 - Only push-mark when interactive and region not active.
 ;; 1.7.1 - 2013/11/29 - latex/do-auto-fill-p also knows "\\(".
 ;; 1.7   - 2013/11/25 - latex/override-font-map.
@@ -121,8 +122,8 @@
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.7.2" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 14 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.7.3" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 15 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
@@ -246,10 +247,12 @@ pushed if region isn't active."
                                      "\\part"
                                      "\\maketitle"
                                      "\\documentclass")
-  "List of strings which define what a section can be."
+  "List of strings which define what a section can be.
+
+Ordered from smallest to largest."
   :type '(repeat string)
   :group 'latex-extra
-  :package-version '(latex-extra . "1.0"))
+  :package-version '(latex-extra . "1.7.3"))
 
 (defun latex/next-section (n &optional do-push-mark)
   "Move N (or 1) headers forward.
@@ -272,8 +275,8 @@ DO-PUSH-MARK defaults to t when interactive, but mark is only
 pushed if region isn't active."
   (interactive "p\nd")
   (save-match-data
-    (let ((sap (thing-at-point 'symbol)))
-      (when (and (stringp sap) (string-match (latex/section-regexp) sap))
+    (let ((hap (latex//header-at-point)))
+      (when (and (stringp hap) (string-match (latex/section-regexp) hap))
         (backward-sexp 1)
         (forward-char -1))))
   (latex/next-section (- (- n 1)) do-push-mark))
@@ -347,15 +350,15 @@ determined by the positivity of N.
 \"previous-header\", otherwise it is ignored."
   (let* ((direction (if (> n 0) 1 -1))
          (amount (* n direction))
-         (sap (thing-at-point 'symbol)) ;symbol at point
-         (is-on-header-p (and (stringp sap)
-                              (string-match (latex/section-regexp) sap)))
+         (hap (latex//header-at-point))                       ;header at point
+         (is-on-header-p (and (stringp hap)
+                              (string-match (latex/section-regexp) hap)))
          (result
           (save-match-data
             (save-excursion
               (if (or is-on-header-p (latex//impl-previous-section))
                   (progn
-                    (setq sap (thing-at-point 'symbol))
+                    (setq hap (latex//header-at-point))
                     (when (looking-at "\\\\")
                       (unless (or (eobp) (= amount 0))
                         (forward-char 1)))
@@ -363,8 +366,8 @@ determined by the positivity of N.
                                 (search-forward-regexp (latex/section-regexp)
                                                        nil :noerror direction))
                       (save-match-data
-                        (when (eval (list pred sap (thing-at-point 'symbol)))
-                          (setq sap (thing-at-point 'symbol))
+                        (when (eval (list pred hap (latex//header-at-point)))
+                          (setq hap (latex//header-at-point))
                           (decf amount))))
                     (if (= amount 0)
                         ;; Finished moving
@@ -380,6 +383,14 @@ determined by the positivity of N.
       (latex//maybe-push-mark do-push-mark)
       result)))
 
+(defun latex//header-at-point ()
+  (if (looking-at "\\\\")
+      (progn (forward-char 1)
+             (concat "\\" (thing-at-point 'word)))
+    (if (and (thing-at-point 'word)
+             (looking-back "\\\\[[:alpha:]]*"))
+        (concat "\\" (thing-at-point 'word)))))
+
 (defun latex/section<= (x y)
   "Non-nil if Y comes after (or is equal to) X in `latex/section-hierarchy'."
   (member y (member x latex/section-hierarchy)))
@@ -390,7 +401,7 @@ determined by the positivity of N.
 
 (defun latex/section-regexp ()
   "Return a regexp matching anything in `latex/section-hierarchy'."
-  (mapconcat 'regexp-quote latex/section-hierarchy "\\|"))
+  (regexp-opt latex/section-hierarchy))
 
 (defun latex/beginning-of-line ()
   "Do `LaTeX-back-to-indentation' or `beginning-of-line'."
