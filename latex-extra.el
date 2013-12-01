@@ -101,6 +101,8 @@
 ;; 
 
 ;;; Change Log:
+;; 1.7.3 - 2013/12/01 - Improve region choosing for latex/clean-fill-indent-environment.
+;; 1.7.3 - 2013/12/01 - latex/override-fill-map.
 ;; 1.7.3 - 2013/12/01 - Fix next-section.
 ;; 1.7.2 - 2013/11/29 - Only push-mark when interactive and region not active.
 ;; 1.7.1 - 2013/11/29 - latex/do-auto-fill-p also knows "\\(".
@@ -473,11 +475,21 @@ nil:     Doesn't erase any whitespace."
 (defun latex/clean-fill-indent-environment (&optional indent)
   "Severely reorganise whitespace in current environment.
 
-Performs the following actions (on current environment):
+ (If you want the usual binding back for \"C-c C-q\", see `latex/override-fill-map')
+
+Performs the following actions (on current region, environment,
+or section):
  1. Turn multiple new-lines and spaces into single new-lines and
     spaces, according to `latex/clean-up-whitespace'.
  2. Fill text, unless `latex/cleanup-do-fill' is nil.
- 3. Indent everything."
+ 3. Indent everything.
+
+It decides where to act in the following way:
+ 1. If region is active, act on it.
+ 2. If inside an environment (other than \"document\") act on it.
+ 3. If inside a section (or chapter, subsection, etc) act on it.
+ 4. If inside a document environment, act on it.
+ 5. If neither of that happened, act on entire buffer."
   (interactive)
   (save-match-data
     (save-excursion
@@ -524,10 +536,14 @@ Performs the following actions (on current environment):
 
 (defun latex//mark-current-thing ()
   "Mark current section or environment, whichever comes first."
-  (if (> (save-excursion (LaTeX-find-matching-begin) (point))  
-         (save-excursion (latex/previous-section 1) (point)))  
-      (LaTeX-mark-environment)
-    (LaTeX-mark-section)))
+  (let ((begin (save-excursion (and (ignore-errors (LaTeX-find-matching-begin)) (point))))
+        (header (save-excursion (ignore-errors (latex//impl-previous-section)))))    
+    (if (or begin header)
+        (if (> (or begin (point-min))
+               (or header (point-min)))
+            (LaTeX-mark-environment)
+          (LaTeX-mark-section))
+      (mark-whole-buffer))))
 
 ;;; Compilation
 (defcustom latex/view-after-compile t
@@ -664,6 +680,30 @@ something else."
   :package-version '(latex-extra . "1.7"))
 (defvaralias 'latex/override-font-list 'latex/override-font-map)
 
+(defcustom latex/override-fill-map t
+  "If non-nil, `latex/clean-fill-indent-environment' will be bound to \"C-c C-q\".
+
+The reason someone what want to disable this, is that \"C-c C-q\"
+is usually a prefix key for 4 other functions:
+  C-e: LaTeX-fill-environment
+  C-p: LaTeX-fill-paragraph
+  C-r: LaTeX-fill-region
+  C-s: LaTeX-fill-section
+
+The reason we take the liberty of overriding this keymap by
+default is that, `LaTeX-fill-paragraph' is already bound to `M-q'
+and the 3 other functions are essentially contained in
+`latex/clean-fill-indent-environment' (read its documentation for
+more information).
+
+If you set this to nil, we won't bind the command
+`latex/clean-fill-indent-environment' to anything (it would be
+usually bound to \"C-c C-p\"), so it will be up to you to bind it
+to something else."
+  :type 'boolean
+  :group 'latex-extra
+  :package-version '(latex-extra . "1.7.3"))
+
 ;;;###autoload
 (defun latex/setup-keybinds ()
   "Define our key binds."
@@ -677,10 +717,11 @@ something else."
   (define-key LaTeX-mode-map "\C-\M-e" 'latex/end-of-environment)
   (define-key LaTeX-mode-map ""   'latex/beginning-of-line)
   (define-key LaTeX-mode-map "" 'latex/compile-commands-until-done)
-  (define-key LaTeX-mode-map "" 'latex/clean-fill-indent-environment)
   (define-key LaTeX-mode-map "" 'latex/up-section)
   (define-key LaTeX-mode-map "" 'latex/next-section)
   (define-key LaTeX-mode-map "" 'latex/previous-section-same-level)
+  (when latex/override-fill-map
+    (define-key LaTeX-mode-map "" 'latex/clean-fill-indent-environment))
   (when latex/override-font-map
     (message "%S changed to \"C-c f\"." 'TeX-font)
     (define-key LaTeX-mode-map "" 'latex/next-section-same-level)
