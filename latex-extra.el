@@ -246,7 +246,8 @@ pushed if region isn't active."
                                      "\\chapter"
                                      "\\part"
                                      "\\maketitle"
-                                     "\\documentclass")
+                                     ;; "\\documentclass"
+                                     )
   "List of strings which define what a section can be.
 
 Ordered from smallest to largest."
