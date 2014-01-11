@@ -305,7 +305,12 @@ Header stands for any string listed in `latex/section-hierarchy'.
 Negative N goes backward.
 
 DO-PUSH-MARK defaults to t when interactive, but mark is only
-pushed if region isn't active."
+pushed if region isn't active.
+
+The default binding for this key (C-c C-f) overrides a binding in
+`LaTeX-mode-map' used for inserting fonts (which is moved to
+C-c f). See the variable `latex/override-font-map' for more
+information (and how to disable this)."
   (interactive "p\nd")
   (goto-char (latex//find-nth-section-with-predicate n 'latex/section<= do-push-mark)))
 

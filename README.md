@@ -6,6 +6,11 @@ from melpa and call
 
     (eval-after-load 'latex '(latex/setup-keybinds))
 
+*Note, this will move the key binds **C-c C-q**, **C-c C-f**, and
+**C-c C-p**. To understand why (or disable it) look into the variables
+`latex/override-font-map`, `latex/override-fill-map`, and
+`latex/override-preview-map`.*
+
 The additions of this package fall into the following three
 categories:
 
