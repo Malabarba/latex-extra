@@ -641,9 +641,10 @@ is wrong).
           (TeX-next-error t))))
     (when (>= counter 0) ;; 
       (set-buffer initial-buffer)
-      (if latex/view-skip-confirmation
-          (TeX-view)
-        (TeX-command TeX-command-Show 'TeX-master-file)))))
+      (when latex/view-after-compile
+		  (if latex/view-skip-confirmation
+			  (TeX-view)
+			(TeX-command TeX-command-Show 'TeX-master-file))))))
 
 (defcustom latex/override-preview-map t
   "If non-nil, move the `preview-map' in LaTeX-mode from \"C-c C-p\" to \"C-c p\".
