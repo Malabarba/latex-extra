@@ -3,8 +3,8 @@
 ;; Copyright (C) 2013 Artur Malabarba <bruce.connor.am@gmail.com>
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
-;; URL: http://github.com/BruceConnor/latex-extra
-;; Version: 1.7.3
+;; URL: http://github.com/Bruce-Connor/latex-extra
+;; Version: 1.7.4
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -101,6 +101,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.7.4 - 2014/03/25 - Fixed url in latex-bug-report.
 ;; 1.7.3 - 2013/12/01 - Improve region choosing for latex/clean-fill-indent-environment.
 ;; 1.7.3 - 2013/12/01 - latex/override-fill-map.
 ;; 1.7.3 - 2013/12/01 - Fix next-section.
@@ -124,14 +125,14 @@
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.7.3" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 15 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.7.4" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 16 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
   (message "Your latex-version is: %s, and your emacs version is: %s.\nPlease include this in your report!"
            latex-extra-version emacs-version)
-  (browse-url "https://github.com/BruceConnor/latex-extra/issues/new"))
+  (browse-url "https://github.com/Bruce-Connor/latex-extra/issues/new"))
 (defun latex-extra-customize ()
   "Open the customisation menu in the `latex-extra' group."
   (interactive)
