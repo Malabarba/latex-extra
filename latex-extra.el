@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/Bruce-Connor/latex-extra
-;; Version: 1.7.4
+;; Version: 1.7.5
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -101,6 +101,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.7.5 - 2014/05/07 - Fixed next/previous-section bug at top of file.
 ;; 1.7.4 - 2014/03/25 - Fixed url in latex-bug-report.
 ;; 1.7.3 - 2013/12/01 - Improve region choosing for latex/clean-fill-indent-environment.
 ;; 1.7.3 - 2013/12/01 - latex/override-fill-map.
@@ -125,8 +126,8 @@
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.7.4" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 16 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.7.5" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 17 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
@@ -385,8 +386,13 @@ determined by the positivity of N.
                       (if (= amount n)
                           (message "No sections %s! (satisfying %S)"
                                    (if (> direction 0) "below" "above") pred)
-                        (message "Reached the %s." (if (> direction 0) "bottom" "top")))))
-                (message "Not inside a header."))))))
+                        (message "Reached the %s." 
+                                 (if (> direction 0) "bottom" "top")))))
+                (if (< direction 0)
+                    (goto-char (point-min))
+                  (when (search-forward-regexp 
+                         (latex/section-regexp) nil :noerror direction)
+                    (match-beginning 0))))))))
     (if (null (number-or-marker-p result))
         (point)
       (latex//maybe-push-mark do-push-mark)
