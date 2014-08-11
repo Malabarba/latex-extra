@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/Bruce-Connor/latex-extra
-;; Version: 1.7.5
+;; Version: 1.7.6
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -101,6 +101,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.7.6 - 2014/08/11 - latex/section-regexp no longer wrongly matches things like \partial.
 ;; 1.7.5 - 2014/05/07 - Fixed next/previous-section bug at top of file.
 ;; 1.7.4 - 2014/03/25 - Fixed url in latex-bug-report.
 ;; 1.7.3 - 2013/12/01 - Improve region choosing for latex/clean-fill-indent-environment.
@@ -126,8 +127,8 @@
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.7.5" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 17 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.7.6" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 18 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
@@ -416,7 +417,7 @@ determined by the positivity of N.
 
 (defun latex/section-regexp ()
   "Return a regexp matching anything in `latex/section-hierarchy'."
-  (regexp-opt latex/section-hierarchy))
+  (concat (regexp-opt latex/section-hierarchy) "\\_>"))
 
 (defun latex/beginning-of-line ()
   "Do `LaTeX-back-to-indentation' or `beginning-of-line'."
