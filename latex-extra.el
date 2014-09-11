@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/Bruce-Connor/latex-extra
-;; Version: 1.7.6
+;; Version: 1.8
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1"))
 ;; 
@@ -16,50 +16,54 @@
 ;; Defines extra commands and keys for LaTeX-mode. To activate (after
 ;; installing from melpa) just call
 ;; 
-;;     (eval-after-load 'latex '(latex/setup-keybinds))
+;;     (add-hook 'LaTeX-mode-hook #'latex-extra-mode)
 ;;
 ;; The additions of this package fall into the following three
 ;; categories:
 ;; 
-;; ## 1-Key Compilation ##
+;; 1-Key Compilation
+;; =================
 ;; 
-;; Tired of hitting `C-c C-c' 4 times (latex, bibtex, latex, view) for
+;; Tired of hitting C-c C-c 4 times (latex, bibtex, latex, view) for
 ;; the document to compile? This defines a much needed command that does
-;; **everything** at once, and even handles compilation errors!
+;; *everything* at once, and even handles compilation errors!
 ;; 
-;; - C-c C-a **=>** `latex/compile-commands-until-done'
+;;   C-c C-a `latex/compile-commands-until-done'
 ;; 
-;; ## Navigation ##
+;; Navigation
+;; ==========
 ;; 
 ;; Five new keybindings are defined for navigating between
 ;; sections/chapters. These are meant to be intuitive to people familiar
 ;; with `org-mode'.
 ;; 
-;; - C-c C-n **=>** `latex/next-section'  
-;; Goes forward to the next section-like command in the buffer (\part,
-;; \chapter, \(sub)section, or \(sub)paragraph, whichever comes first).
-;; - C-c C-u **=>** `latex/up-section'  
-;; Goes backward to the previous section-like command containing this
-;; one. For instance, if you're inside a subsection it goes up to the
-;; section that contains it.
-;; - C-c C-f **=>** `latex/next-section-same-level'  
-;; Like next-section, except it skips anything that's "lower-level" then
-;; the current one. For instance, if you're inside a subsection it finds
-;; the next subsection (or higher), skipping any subsubsections or
-;; paragraphs.
-;; - C-M-f **=>** `latex/forward-environment'
-;; Skip over the next environment, or exit the current one, whichever
-;; comes first. 
-;; - C-M-e **=>** `latex/end-of-environment'
-;; Exit the current environment, and skip over some whitespace
-;; afterwards. (Like `LaTeX-find-matching-end', but a little more useful.)
-;; - C-M-b **=>** `latex/backward-environment'
-;; - C-M-a **=>** `latex/beginning-of-environment'
-;; - C-c C-p **=>** `latex/previous-section'  
-;; - C-c C-b **=>** `latex/previous-section-same-level'  
-;; Same as above, but go backward.
+;;   C-c C-n `latex/next-section'  
+;;     Goes forward to the next section-like command in the buffer (\part,
+;;     \chapter, \(sub)section, or \(sub)paragraph, whichever comes first).
+;;   C-c C-u `latex/up-section'  
+;;     Goes backward to the previous section-like command containing this
+;;     one. For instance, if you're inside a subsection it goes up to the
+;;     section that contains it.
+;;   C-c C-f `latex/next-section-same-level'  
+;;     Like next-section, except it skips anything that's "lower-level" then
+;;     the current one. For instance, if you're inside a subsection it finds
+;;     the next subsection (or higher), skipping any subsubsections or
+;;     paragraphs.
+;;   C-M-f `latex/forward-environment'
+;;     Skip over the next environment, or exit the current one, whichever
+;;     comes first. 
+;;   C-M-e `latex/end-of-environment'
+;;     Exit the current environment, and skip over some whitespace
+;;     afterwards. (Like `LaTeX-find-matching-end', but a little more useful.)
 ;; 
-;; ## Whitespace Handling ##
+;;   C-M-b `latex/backward-environment'
+;;   C-M-a `latex/beginning-of-environment'
+;;   C-c C-p `latex/previous-section'  
+;;   C-c C-b `latex/previous-section-same-level'  
+;;     Same as above, but go backward.
+;; 
+;; Whitespace Handling
+;; ===================
 ;; 
 ;; `latex-extra.el' improves `auto-fill-mode' so that it only applies to
 ;; text, not equations. To use this improvement, just activate
@@ -67,12 +71,12 @@
 ;; 
 ;; It also defines a new command:  
 ;; 
-;; - C-c C-q **=>** `latex/clean-fill-indent-environment'  
-;; Completely cleans up the entire current environment. This involves:
+;;   C-c C-q `latex/clean-fill-indent-environment'  
+;;     Completely cleans up the entire current environment. This involves:
 ;; 
-;; 1. Removing extraneous spaces and blank lines.
-;; 2. Filling text (and only text, not equations).
-;; 3. Indenting everything.
+;;     1. Removing extraneous spaces and blank lines.
+;;     2. Filling text (and only text, not equations).
+;;     3. Indenting everything.
 
 ;;; Instructions:
 ;;
@@ -101,6 +105,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.8   - 2014/09/11 - Refactor into a minor mode `latex-extra-mode'.
 ;; 1.7.6 - 2014/08/11 - latex/section-regexp no longer wrongly matches things like \partial.
 ;; 1.7.5 - 2014/05/07 - Fixed next/previous-section bug at top of file.
 ;; 1.7.4 - 2014/03/25 - Fixed url in latex-bug-report.
@@ -127,8 +132,8 @@
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
 
-(defconst latex-extra-version "1.7.6" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 18 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.8" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 19 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
@@ -650,9 +655,9 @@ is wrong).
     (when (>= counter 0) ;; 
       (set-buffer initial-buffer)
       (when latex/view-after-compile
-		  (if latex/view-skip-confirmation
-			  (TeX-view)
-			(TeX-command TeX-command-Show 'TeX-master-file))))))
+        (if latex/view-skip-confirmation
+            (TeX-view)
+          (TeX-command TeX-command-Show 'TeX-master-file))))))
 
 (defcustom latex/override-preview-map t
   "If non-nil, move the `preview-map' in LaTeX-mode from \"C-c C-p\" to \"C-c p\".
@@ -718,39 +723,114 @@ to something else."
   :group 'latex-extra
   :package-version '(latex-extra . "1.7.3"))
 
-;;;###autoload
-(defun latex/setup-keybinds ()
-  "Define our key binds."
-  (interactive)
+(defun latex/setup ()
+  "Prepare all latex-extra features."
+  (add-hook 'latex-extra-mode-hook #'latex/setup-auto-fill)
   (add-to-list 'LaTeX-clean-intermediate-suffixes "\\.tdo") ;todonotes package
   (add-to-list 'LaTeX-clean-intermediate-suffixes "Notes\\.bib") ;revtex package
-  (add-hook 'LaTeX-mode-hook 'latex/setup-auto-fill)  
-  (define-key LaTeX-mode-map "\C-\M-f" 'latex/forward-environment)
-  (define-key LaTeX-mode-map "\C-\M-b" 'latex/backward-environment)
-  (define-key LaTeX-mode-map "\C-\M-a" 'latex/beginning-of-environment)
-  (define-key LaTeX-mode-map "\C-\M-e" 'latex/end-of-environment)
-  (define-key LaTeX-mode-map ""   'latex/beginning-of-line)
-  (define-key LaTeX-mode-map "" 'latex/compile-commands-until-done)
-  (define-key LaTeX-mode-map "" 'latex/up-section)
-  (define-key LaTeX-mode-map "" 'latex/next-section)
-  (define-key LaTeX-mode-map "" 'latex/previous-section-same-level)
-  (when latex/override-fill-map
-    (define-key LaTeX-mode-map "" 'latex/clean-fill-indent-environment))
-  (when latex/override-font-map
+  (if (null latex/override-fill-map)
+      (define-key latex-extra-mode-map "" nil)
+    (define-key latex-extra-mode-map "" #'latex/clean-fill-indent-environment))
+  (if (null latex/override-font-map)
+      (define-key latex-extra-mode-map "" nil)
     (message "%S changed to \"C-c f\"." 'TeX-font)
-    (define-key LaTeX-mode-map "" 'latex/next-section-same-level)
-    (define-key LaTeX-mode-map "f"  'TeX-font))
+    (define-key latex-extra-mode-map "" #'latex/next-section-same-level)
+    (define-key latex-extra-mode-map "f" #'TeX-font))
   (latex/-rebind-font-list)
-  (when latex/override-preview-map
+  (if (null latex/override-preview-map)
+      (define-key latex-extra-mode-map "" nil)
     (message "%S changed to \"C-c p\"." 'preview-map)
-    (define-key LaTeX-mode-map "" 'latex/previous-section)
-    (define-key LaTeX-mode-map "p"  'preview-map))
-  (defadvice LaTeX-preview-setup (after latex/after-LaTeX-preview-setup-advice () activate)
-    "Move the preview map to \"p\" so that we free up \"\"."
-    (when latex/override-preview-map
-      (define-key LaTeX-mode-map "" 'latex/previous-section)
-      (define-key LaTeX-mode-map "p"  'preview-map)))
-  (add-hook 'LaTeX-mode-hook 'latex/setup-auto-fill))
+    (define-key latex-extra-mode-map "" #'latex/previous-section)
+    (define-key latex-extra-mode-map "p" #'preview-map)))
+
+;;;###autoload
+(defun latex/setup-keybinds ()
+  "Obsolete function. Use (add-hook 'LaTeX-mode-hook #'latex-extra-mode) instead."
+  (declare (obsolete "use (add-hook 'LaTeX-mode-hook #'latex-extra-mode) instead." "1.8"))
+  (interactive)
+  (add-hook 'LaTeX-mode-hook #'latex-extra-mode))
+
+;;;###autoload
+(define-minor-mode latex-extra-mode
+  "Defines extra commands and keys for LaTeX-mode. 
+
+To activate just call
+    (add-hook 'LaTeX-mode-hook #'latex-extra-mode)
+
+The additions of this package fall into the following three
+categories:
+
+1-Key Compilation
+=================
+
+Tired of hitting C-c C-c 4 times (latex, bibtex, latex, view) for
+the document to compile? This defines a much needed command that does
+*everything* at once, and even handles compilation errors!
+
+  C-c C-a `latex/compile-commands-until-done'
+
+Navigation
+==========
+
+Five new keybindings are defined for navigating between
+sections/chapters. These are meant to be intuitive to people familiar
+with `org-mode'.
+
+  C-c C-n `latex/next-section'  
+    Goes forward to the next section-like command in the buffer (\part,
+    \chapter, \(sub)section, or \(sub)paragraph, whichever comes first).
+  C-c C-u `latex/up-section'  
+    Goes backward to the previous section-like command containing this
+    one. For instance, if you're inside a subsection it goes up to the
+    section that contains it.
+  C-c C-f `latex/next-section-same-level'  
+    Like next-section, except it skips anything that's \"lower-level\" then
+    the current one. For instance, if you're inside a subsection it finds
+    the next subsection (or higher), skipping any subsubsections or
+    paragraphs.
+  C-M-f `latex/forward-environment'
+    Skip over the next environment, or exit the current one, whichever
+    comes first. 
+  C-M-e `latex/end-of-environment'
+    Exit the current environment, and skip over some whitespace
+    afterwards. (Like `LaTeX-find-matching-end', but a little more useful.)
+
+  C-M-b `latex/backward-environment'
+  C-M-a `latex/beginning-of-environment'
+  C-c C-p `latex/previous-section'  
+  C-c C-b `latex/previous-section-same-level'  
+    Same as above, but go backward.
+
+Whitespace Handling
+===================
+
+`latex-extra.el' improves `auto-fill-mode' so that it only applies to
+text, not equations. To use this improvement, just activate
+`auto-fill-mode' as usual.
+
+It also defines a new command:  
+
+  C-c C-q `latex/clean-fill-indent-environment'  
+    Completely cleans up the entire current environment. This involves:
+
+    1. Removing extraneous spaces and blank lines.
+    2. Filling text (and only text, not equations).
+    3. Indenting everything."
+  nil " TeXtra"
+  '(("" . latex/next-section)
+    ("" . latex/up-section)
+    ("" . latex/compile-commands-until-done)
+    (""   . latex/beginning-of-line)
+    ("\C-\M-e" . latex/end-of-environment)
+    ("\C-\M-a" . latex/beginning-of-environment)
+    ("\C-\M-b" . latex/backward-environment)
+    ("\C-\M-f" . latex/forward-environment)
+    ("" . latex/previous-section-same-level)) ;C-c C-;
+  :global nil
+  :group 'latex-extra
+
+  (when latex-extra-mode
+    (latex/setup)))
 
 (provide 'latex-extra)
 
