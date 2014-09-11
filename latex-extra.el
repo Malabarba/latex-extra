@@ -6,7 +6,7 @@
 ;; URL: http://github.com/Bruce-Connor/latex-extra
 ;; Version: 1.8
 ;; Keywords: tex
-;; Package-Requires: ((auctex "11.86.1"))
+;; Package-Requires: ((auctex "11.86.1") (cl-lib "0.5"))
 ;; 
 ;; Prefix: latex
 ;; Separator: /
@@ -105,6 +105,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.8   - 2014/09/11 - Add \appendix to latex/section-hierarchy.
 ;; 1.8   - 2014/09/11 - Refactor into a minor mode `latex-extra-mode'.
 ;; 1.7.6 - 2014/08/11 - latex/section-regexp no longer wrongly matches things like \partial.
 ;; 1.7.5 - 2014/05/07 - Fixed next/previous-section bug at top of file.
@@ -127,10 +128,11 @@
 ;; 1.2.1 - 2013/10/11 - Fixed previous section
 ;; 1.2.1 - 2013/10/11 - Rename latex-customize
 ;;; Code:
-
+
 (eval-when-compile (require 'tex))
 (eval-when-compile (require 'latex))
 (eval-when-compile (require 'tex-buf))
+(require 'cl-lib)
 
 (defconst latex-extra-version "1.8" "Version of the latex-extra.el package.")
 (defconst latex-extra-version-int 19 "Version of the latex-extra.el package, as an integer.")
@@ -153,6 +155,7 @@
     (replace-match rep nil nil)))
 (defun always-t (&rest x) "Return t." t)
 
+
 ;;; Environment navigation
 (defun latex//found-undesired-string (dir)
   "Decide whether the last search found the desired string."
@@ -190,7 +193,7 @@ pushed if region isn't active."
       (setq direction -1)
       (setq movement-function 'LaTeX-find-matching-begin))
     (while (and (> count 0) (funcall movement-function))
-      (decf count))
+      (cl-decf count))
     (when (> direction 0)    
       (latex//forward-arguments)
       (skip-chars-forward "[:blank:]")
@@ -220,7 +223,7 @@ pushed if region isn't active."
     (while (and (> count 0)
                 (re-search-forward "\\\\\\(begin\\|end\\)\\b"
                                    nil t direction))
-      (decf count)
+      (cl-decf count)
       (if (latex//found-undesired-string direction)
           (unless (latex/end-of-environment direction)
             (error "Unmatched \\begin?"))
@@ -246,24 +249,28 @@ pushed if region isn't active."
   (interactive "p")
   (latex/forward-environment (- N) do-push-mark))
 
+
+;;;;;;;;;;;;;;;;;;;;;;
 ;;; Section navigation
-(defcustom latex/section-hierarchy '("\\headerbox"
-                                     "\\subparagraph"
-                                     "\\paragraph"
-                                     "\\subsubsection"
-                                     "\\subsection"
-                                     "\\section"
-                                     "\\chapter"
-                                     "\\part"
-                                     "\\maketitle"
-                                     ;; "\\documentclass"
-                                     )
-  "List of strings which define what a section can be.
+(defcustom latex/section-hierarchy
+  '("\\\\headerbox\\_>"
+    "\\\\subparagraph\\_>"
+    "\\\\paragraph\\_>"
+    "\\\\subsubsection\\_>"
+    "\\\\subsection\\_>"
+    "\\\\section\\_>"
+    "\\\\chapter\\_>"
+    "\\\\part\\_>"
+    ;; "\\\\maketitle\\_>"
+    "\\\\appendix\\_>\\|\\\\\\(begin\\|end\\){document}"
+    "\\\\documentclass\\_>"
+    )
+  "List of regexps which define what a section can be.
 
-Ordered from smallest to largest."
+Ordered from deepest to highest level."
   :type '(repeat string)
   :group 'latex-extra
-  :package-version '(latex-extra . "1.7.3"))
+  :package-version '(latex-extra . "1.8"))
 
 (defun latex/next-section (n &optional do-push-mark)
   "Move N (or 1) headers forward.
@@ -285,11 +292,9 @@ Header stands for any string listed in `latex/section-hierarchy'.
 DO-PUSH-MARK defaults to t when interactive, but mark is only
 pushed if region isn't active."
   (interactive "p\nd")
-  (save-match-data
-    (let ((hap (latex//header-at-point)))
-      (when (and (stringp hap) (string-match (latex/section-regexp) hap))
-        (backward-sexp 1)
-        (forward-char -1))))
+  (goto-char (line-beginning-position))
+  (when (latex//header-at-point)
+    (forward-char -1))
   (latex/next-section (- (- n 1)) do-push-mark))
 
 (defun latex/up-section (n &optional do-push-mark)
@@ -367,8 +372,7 @@ determined by the positivity of N.
   (let* ((direction (if (> n 0) 1 -1))
          (amount (* n direction))
          (hap (latex//header-at-point))                       ;header at point
-         (is-on-header-p (and (stringp hap)
-                              (string-match (latex/section-regexp) hap)))
+         (is-on-header-p hap)
          (result
           (save-match-data
             (save-excursion
@@ -379,12 +383,13 @@ determined by the positivity of N.
                       (unless (or (eobp) (= amount 0))
                         (forward-char 1)))
                     (while (and (> amount 0)
-                                (search-forward-regexp (latex/section-regexp)
-                                                       nil :noerror direction))
+                                (search-forward-regexp
+                                 (latex/section-regexp)
+                                 nil :noerror direction))
                       (save-match-data
                         (when (eval (list pred hap (latex//header-at-point)))
                           (setq hap (latex//header-at-point))
-                          (decf amount))))
+                          (cl-decf amount))))
                     (if (= amount 0)
                         ;; Finished moving
                         (match-beginning 0)
@@ -405,24 +410,30 @@ determined by the positivity of N.
       result)))
 
 (defun latex//header-at-point ()
-  (if (looking-at "\\\\")
-      (progn (forward-char 1)
-             (concat "\\" (thing-at-point 'word)))
-    (if (and (thing-at-point 'word)
-             (looking-back "\\\\[[:alpha:]]*"))
-        (concat "\\" (thing-at-point 'word)))))
+  "Return header under point or nil, as per `latex/section-hierarchy'."
+  (save-match-data
+    (save-excursion
+      (goto-char (line-beginning-position))
+      (when (looking-at (latex/section-regexp))
+        (match-string-no-properties 0)))))
 
 (defun latex/section<= (x y)
   "Non-nil if Y comes after (or is equal to) X in `latex/section-hierarchy'."
-  (member y (member x latex/section-hierarchy)))
+  (cl-member-if
+   (lambda (it) (string-match it y))
+   (cl-member-if (lambda (it) (string-match it x)) 
+                 latex/section-hierarchy)))
 
 (defun latex/section< (x y)
   "Non-nil if Y comes after X in `latex/section-hierarchy'."
-  (member y (cdr-safe (member x latex/section-hierarchy))))
+  (cl-member-if
+   (lambda (it) (string-match it y))
+   (cdr-safe (cl-member-if (lambda (it) (string-match it x)) 
+                           latex/section-hierarchy))))
 
 (defun latex/section-regexp ()
   "Return a regexp matching anything in `latex/section-hierarchy'."
-  (concat (regexp-opt latex/section-hierarchy) "\\_>"))
+  (format "^\\(%s\\)" (mapconcat 'identity latex/section-hierarchy "\\|")))
 
 (defun latex/beginning-of-line ()
   "Do `LaTeX-back-to-indentation' or `beginning-of-line'."
@@ -432,6 +443,33 @@ determined by the positivity of N.
     (when (= bef (point))
       (beginning-of-line))))
 
+
+;;; Section Folding
+(defun latex/hide-show ()
+  "Hide or show current header and its contents."
+  (interactive)
+  (if (latex//header-at-point)
+      (if (null (eq last-command 'latex/hide-show))
+          (hide-leaves)
+        (show-subtree)
+        (setq this-command nil))
+    (when (eq last-command-event 'tab)
+      (define-key latex-extra-mode-map [tab] nil)
+      (call-interactively (key-binding "\t" :accept-default))
+      (define-key latex-extra-mode-map [tab] 'latex/hide-show))))
+
+(defun latex/hide-show-all ()
+  "Hide or show the contents of all headers."
+  (interactive)
+  (if (null (eq last-command 'latex/hide-show-all))
+      (save-excursion
+        (goto-char (point-min))
+        (while (outline-next-heading)
+          (hide-leaves)))
+    (show-all)
+    (setq this-command nil)))
+
+
 ;;; Autofilling
 (defun latex/auto-fill-function ()
   "Perform auto-fill unless point is inside an unsuitable environment.
@@ -563,6 +601,7 @@ It decides where to act in the following way:
           (LaTeX-mark-section))
       (mark-whole-buffer))))
 
+
 ;;; Compilation
 (defcustom latex/view-after-compile t
   "Start view-command at end of `latex/compile-commands-until-done'?"
@@ -641,7 +680,7 @@ is wrong).
       (when (> counter latex/max-runs)
         (error "Number of commands run exceeded %d (%S). Something is probably wrong"
                latex/max-runs 'latex/max-runs))
-      (message "%d Doing: %s" (incf counter) next-command)
+      (message "%d Doing: %s" (cl-incf counter) next-command)
       (set-buffer initial-buffer)
       (TeX-command next-command 'TeX-master-file)
       (if (null (plist-get TeX-error-report-switches (intern master-file)))
@@ -817,7 +856,9 @@ It also defines a new command:
     2. Filling text (and only text, not equations).
     3. Indenting everything."
   nil " TeXtra"
-  '(("" . latex/next-section)
+  '(([tab] . latex/hide-show)
+    ([backtab] . latex/hide-show-all)
+    ("" . latex/next-section)
     ("" . latex/up-section)
     ("" . latex/compile-commands-until-done)
     (""   . latex/beginning-of-line)
