@@ -105,6 +105,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.8   - 2014/09/13 - Org-like folding. Hide/display subtrees with latex/hide-show.
 ;; 1.8   - 2014/09/11 - Add \appendix to latex/section-hierarchy.
 ;; 1.8   - 2014/09/11 - Refactor into a minor mode `latex-extra-mode'.
 ;; 1.7.6 - 2014/08/11 - latex/section-regexp no longer wrongly matches things like \partial.
