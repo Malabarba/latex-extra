@@ -105,6 +105,7 @@
 ;; 
 
 ;;; Change Log:
+;; 1.8   - 2014/09/19 - Improve error buffers.
 ;; 1.8   - 2014/09/13 - Org-like folding. Hide/display subtrees with latex/hide-show.
 ;; 1.8   - 2014/09/11 - Add \appendix to latex/section-hierarchy.
 ;; 1.8   - 2014/09/11 - Refactor into a minor mode `latex-extra-mode'.
@@ -699,6 +700,31 @@ is wrong).
             (TeX-view)
           (TeX-command TeX-command-Show 'TeX-master-file))))))
 
+(defvar latex/error-buffer-font-lock
+  '(("--- .* ---" 0 font-lock-keyword-face)
+    ("^l\\.[0-9]+" 0 'underline)
+    ("^\\([[:alpha:]]+\\):\\(.*\\)$"
+     (1 'compilation-warning) (2 font-lock-constant-face))
+    ("^\\(<recently read>\\) \\(.*\\)$"
+     (1 'compilation-warning) (2 font-lock-constant-face))) 
+  "Font lock rules used in \"*TeX help*\" buffers.")
+
+(defadvice TeX-help-error (around latex/around-TeX-help-error-advice () activate)
+  "Activate `special-mode' and add font-locking in \"*TeX Help*\" buffers."
+  (if (null latex-extra-mode)
+      ad-do-it
+    (when (buffer-live-p (get-buffer "*TeX Help*"))
+      (kill-buffer (get-buffer "*TeX Help*")))
+    ad-do-it
+    (when (buffer-live-p (get-buffer "*TeX Help*"))
+      (with-current-buffer (get-buffer "*TeX Help*")
+        (special-mode)
+        (let ((inhibit-read-only t))
+          (font-lock-add-keywords nil latex/error-buffer-font-lock)
+          (font-lock-ensure))))))
+
+
+;;; Setup and minor mode
 (defcustom latex/override-preview-map t
   "If non-nil, move the `preview-map' in LaTeX-mode from \"C-c C-p\" to \"C-c p\".
 
