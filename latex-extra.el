@@ -569,59 +569,70 @@ It decides where to act in the following way:
  4. If inside a document environment, act on it.
  5. If neither of that happened, act on entire buffer."
   (interactive)
-  (save-match-data
-    (save-excursion
-      (save-restriction
-        (unless (region-active-p)
-          (latex//mark-current-thing))
-        (when (> (point) (mark))
-          (exchange-point-and-mark))
-        (setq indent (or indent (- (point) (line-beginning-position))))
-        (narrow-to-region (region-beginning) (region-end))
-        ;; Whitespace
-        (goto-char (point-min))
-        (when latex/clean-up-whitespace
-          (message "Cleaning up...")
-          (unless (eq latex/clean-up-whitespace 'lines)  (replace-regexp-everywhere "  +$" ""))
-          (unless (eq latex/clean-up-whitespace 'lines)  (replace-regexp-everywhere "  +\\([^% ]\\)" " \\1"))
-          (unless (eq latex/clean-up-whitespace 'spaces) (replace-regexp-everywhere "\n\n\n+" "\n\n")))
-        ;; Autofill
-        (goto-char (point-min))
-        (when latex/cleanup-do-fill
-          (let* ((size (number-to-string (length (number-to-string (line-number-at-pos (point-max))))))
-                 (message-string (concat "Filling line %" size "s / %" size "s.")))
-            (goto-char (point-min))
-            (forward-line 1)
-            (while (not (eobp))
-              (if (latex/do-auto-fill-p)
-                  (progn (LaTeX-fill-paragraph)
-                         (forward-line 1))
-                (if (and (stringp (car-safe texmathp-why))
-                         (string= (car texmathp-why) "\\["))
-                    (progn (search-forward "\\]")
+  (let (bounds)
+    (save-match-data
+      (save-excursion
+        (save-restriction
+          (setq bounds
+                (if (use-region-p)
+                    (cons (region-beginning) (region-end))
+                  (latex//bounds-of-current-thing)))
+          (setq indent (or indent (- (point) (line-beginning-position))))
+          (narrow-to-region (car bounds) (cdr bounds))
+          ;; Whitespace
+          (goto-char (point-min))
+          (when latex/clean-up-whitespace
+            (message "Cleaning up...")
+            (unless (eq latex/clean-up-whitespace 'lines)  (replace-regexp-everywhere "  +$" ""))
+            (unless (eq latex/clean-up-whitespace 'lines)  (replace-regexp-everywhere "  +\\([^% ]\\)" " \\1"))
+            (unless (eq latex/clean-up-whitespace 'spaces) (replace-regexp-everywhere "\n\n\n+" "\n\n")))
+          ;; Autofill
+          (goto-char (point-min))
+          (when latex/cleanup-do-fill
+            (let* ((size (number-to-string (length (number-to-string (line-number-at-pos (point-max))))))
+                   (message-string (concat "Filling line %" size "s / %" size "s.")))
+              (goto-char (point-min))
+              (forward-line 1)
+              (while (not (eobp))
+                (if (latex/do-auto-fill-p)
+                    (progn (LaTeX-fill-paragraph)
                            (forward-line 1))
-                  (latex/end-of-environment 1)))
-              (message message-string (line-number-at-pos (point)) (line-number-at-pos (point-max))))))
-        ;; Indentation
-        (message "Indenting...")
-        (goto-char (point-min))
-        (insert (make-string indent ?\ ))
-        (setq indent (point))
-        (forward-line 1)
-        (indent-region (point) (point-max))
-        (delete-region (point-min) indent))))
+                  (if (and (stringp (car-safe texmathp-why))
+                           (string= (car texmathp-why) "\\["))
+                      (progn (search-forward "\\]")
+                             (forward-line 1))
+                    (latex/end-of-environment 1)))
+                (message message-string (line-number-at-pos (point)) (line-number-at-pos (point-max))))))
+          ;; Indentation
+          (message "Indenting...")
+          (goto-char (point-min))
+          (insert (make-string indent ?\ ))
+          (setq indent (point))
+          (forward-line 1)
+          (indent-region (point) (point-max))
+          (delete-region (point-min) indent)))))
   (message "Done."))
 
-(defun latex//mark-current-thing ()
+(defun latex//bounds-of-current-thing ()
   "Mark current section or environment, whichever comes first."
+  (declare (interactive-only t))
   (let ((begin (save-excursion (and (ignore-errors (LaTeX-find-matching-begin)) (point))))
-        (header (save-excursion (ignore-errors (latex//impl-previous-section)))))    
+        (header (save-excursion (ignore-errors (latex//impl-previous-section)))))
     (if (or begin header)
-        (if (> (or begin (point-min))
-               (or header (point-min)))
-            (LaTeX-mark-environment)
-          (LaTeX-mark-section))
-      (mark-whole-buffer))))
+        (progn
+          (goto-char 
+           (max (or begin (point-min))
+                (or header (point-min))))
+          (cons (point)
+                (if (looking-at-p "\\\\begin\\b")
+                    (save-excursion
+                      (latex/forward-environment 1)
+                      (point))
+                  (save-excursion
+                    (let ((l (point)))
+                      (latex/next-section-same-level 1)
+                      (if (= l (point)) (point-max) l))))))
+      (cons (point-min) (point-max)))))
 
 
 ;;; Compilation
