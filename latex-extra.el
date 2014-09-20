@@ -131,10 +131,12 @@
 ;; 1.2.1 - 2013/10/11 - Rename latex-customize
 ;;; Code:
 
-(eval-when-compile (require 'tex))
-(eval-when-compile (require 'latex))
-(eval-when-compile (require 'tex-buf))
+(require 'tex)
+(require 'latex)
+(require 'tex-buf)
+(require 'texmathp)
 (require 'cl-lib)
+(require 'outline)
 
 (defconst latex-extra-version "1.8" "Version of the latex-extra.el package.")
 (defconst latex-extra-version-int 19 "Version of the latex-extra.el package, as an integer.")
@@ -156,6 +158,24 @@
   (while (re-search-forward reg end t)
     (replace-match rep nil nil)))
 (defun always-t (&rest x) "Return t." t)
+
+(defvar latex-extra-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map [tab] #'latex/hide-show)
+    (define-key map [backtab] #'latex/hide-show-all)
+    (define-key map "" #'latex/next-section)
+    (define-key map "" #'latex/up-section)
+    (define-key map "" #'latex/compile-commands-until-done)
+    (define-key map "" #'latex/beginning-of-line)
+    (define-key map "\C-\M-e" #'latex/end-of-environment)
+    (define-key map "\C-\M-a" #'latex/beginning-of-environment)
+    (define-key map "\C-\M-b" #'latex/backward-environment)
+    (define-key map "\C-\M-f" #'latex/forward-environment)
+    (define-key map "" #'latex/previous-section-same-level)
+    map)
+  "Keymap for latex-extra-mode.")
+
+(defvar texmathp-why)
 
 
 ;;; Environment navigation
@@ -203,7 +223,7 @@ pushed if region isn't active."
         (forward-char 1)
         (skip-chars-forward "[:blank:]")))
     ;; Return t or nil
-    (case count     
+    (cl-case count     
       (0 t)
       (1 (message "Reached the end.") nil)
       (t (if (> direction 0)
@@ -789,6 +809,7 @@ to something else."
   :group 'latex-extra
   :package-version '(latex-extra . "1.7.3"))
 
+(declare-function preview-map "preview")
 (defun latex/setup ()
   "Prepare all latex-extra features."
   (add-hook 'latex-extra-mode-hook #'latex/setup-auto-fill)
@@ -882,18 +903,7 @@ It also defines a new command:
     1. Removing extraneous spaces and blank lines.
     2. Filling text (and only text, not equations).
     3. Indenting everything."
-  nil " TeXtra"
-  '(([tab] . latex/hide-show)
-    ([backtab] . latex/hide-show-all)
-    ("" . latex/next-section)
-    ("" . latex/up-section)
-    ("" . latex/compile-commands-until-done)
-    (""   . latex/beginning-of-line)
-    ("\C-\M-e" . latex/end-of-environment)
-    ("\C-\M-a" . latex/beginning-of-environment)
-    ("\C-\M-b" . latex/backward-environment)
-    ("\C-\M-f" . latex/forward-environment)
-    ("" . latex/previous-section-same-level)) ;C-c C-;
+  nil " TeXtra" latex-extra-mode-map
   :global nil
   :group 'latex-extra
 
