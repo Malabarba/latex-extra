@@ -1,4 +1,4 @@
-latex-extra
+latex-extra [![Build Status](https://travis-ci.org/Bruce-Connor/latex-extra.svg?branch=master)](https://travis-ci.org/Bruce-Connor/latex-extra)
 =======
 
 Defines extra commands and keys for LaTeX-mode. To activate, install
@@ -11,8 +11,7 @@ from melpa and call
 `latex/override-font-map`, `latex/override-fill-map`, and
 `latex/override-preview-map`.*
 
-The additions of this package fall into the following three
-categories:
+The additions of this package fall into the following categories:
 
 ## 1-Key Compilation ##
 
@@ -22,6 +21,14 @@ needed command that does **everything** at once, and even handles
 compilation errors!
 
 - `C-c C-a` **=>** `latex/compile-commands-until-done`
+
+## Content Folding ##
+
+Similar to how org-mode hides and displays of subtrees, if you hit
+**TAB** on a section header _latex-extra_ will hide the contents of that
+section for you. Hitting tab twice will expand it again.
+
+Of course, the same goes for chapters, subsections, etc.
 
 ## Navigation ##
 
@@ -66,3 +73,9 @@ It also defines a new command:
   1. Removing extraneous spaces and blank lines.
   2. Filling text (and only text, not equations).
   3. Indenting everything.
+
+## Small User Experience Improvements ##
+
+The buffer used to display LaTeX errors is typically a regular text
+buffer in `fundamental-mode`. *latex-extra* switches it to
+`special-mode` and adds some colors to the display.
