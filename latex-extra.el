@@ -13,6 +13,9 @@
 
 ;;; Commentary:
 ;; 
+;; latex-extra 
+;; ===========
+;; 
 ;; Defines extra commands and keys for LaTeX-mode. To activate (after
 ;; installing from melpa) just call
 ;; 
@@ -29,6 +32,16 @@
 ;; *everything* at once, and even handles compilation errors!
 ;; 
 ;;   C-c C-a `latex/compile-commands-until-done'
+;; 
+;;
+;; Content Folding
+;; ===============
+;; 
+;; Similar to how org-mode hides and displays of subtrees, if you hit
+;; <TAB> on a section header latex-extra will hide the contents of
+;; that section for you. Hitting tab twice will expand it again.
+;; 
+;; Of course, the same goes for chapters, subsections, etc.
 ;; 
 ;; Navigation
 ;; ==========
@@ -77,6 +90,13 @@
 ;;     1. Removing extraneous spaces and blank lines.
 ;;     2. Filling text (and only text, not equations).
 ;;     3. Indenting everything.
+;; 
+;; Small User Experience Improvements
+;; ==================================
+;; 
+;; The buffer used to display LaTeX errors is typically a regular text
+;; buffer in `fundamental-mode'. *latex-extra* switches it to
+;; `special-mode' and adds some colors to the display.
 
 ;;; Instructions:
 ;;
@@ -84,7 +104,7 @@
 ;;
 ;; If you install from melpa: just use (as described above)
 ;;
-;;    (eval-after-load 'latex '(latex/setup-keybinds))
+;;     (add-hook 'LaTeX-mode-hook #'latex-extra-mode)
 ;;
 ;; If you install manually, first require it, then use the code above.
 ;;     (require 'latex-extra)
