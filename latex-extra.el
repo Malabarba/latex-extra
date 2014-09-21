@@ -844,8 +844,8 @@ to something else."
 ;;;###autoload
 (defun latex/setup-keybinds ()
   "Obsolete function. Use (add-hook 'LaTeX-mode-hook #'latex-extra-mode) instead."
-  (declare (obsolete "use (add-hook 'LaTeX-mode-hook #'latex-extra-mode) instead." "1.8"))
   (interactive)
+  (declare (obsolete "use (add-hook 'LaTeX-mode-hook #'latex-extra-mode) instead." "1.8"))
   (add-hook 'LaTeX-mode-hook #'latex-extra-mode))
 
 ;;;###autoload
