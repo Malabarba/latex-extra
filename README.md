@@ -2,14 +2,14 @@ latex-extra [![Build Status](https://travis-ci.org/Bruce-Connor/latex-extra.svg?
 =======
 
 Defines extra commands and keys for LaTeX-mode. To activate, install
-from melpa and call
+from melpa and add the following to your _init.el_ file:
 
-    (eval-after-load 'latex '(latex/setup-keybinds))
+    (add-hook 'LaTeX-mode-hook #'latex-extra-mode)
 
-*Note, this will move the key binds **C-c C-q**, **C-c C-f**, and
+_Note, this will move the key binds **C-c C-q**, **C-c C-f**, and
 **C-c C-p**. To understand why (or disable it) look into the variables
 `latex/override-font-map`, `latex/override-fill-map`, and
-`latex/override-preview-map`.*
+`latex/override-preview-map`._
 
 The additions of this package fall into the following categories:
 
