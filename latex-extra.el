@@ -137,6 +137,7 @@
 (require 'texmathp)
 (require 'cl-lib)
 (require 'outline)
+(require 'names)
 
 (defconst latex-extra-version "1.8" "Version of the latex-extra.el package.")
 (defconst latex-extra-version-int 19 "Version of the latex-extra.el package, as an integer.")
@@ -177,25 +178,26 @@
 
 (defvar texmathp-why)
 
+(define-namespace latex/
 
 ;;; Environment navigation
-(defun latex//found-undesired-string (dir)
+(defun /found-undesired-string (dir)
   "Decide whether the last search found the desired string."
   (if (> dir 0)
       (looking-back "begin")
     (looking-at "\\\\end")))
 
-(defun latex//forward-arguments ()
+(defun /forward-arguments ()
   "Skip forward over the arguments."
   (when (looking-at "\\[") (forward-sexp 1))
   (when (looking-at "{") (forward-sexp 1)))
 
-(defun latex//maybe-push-mark (&optional do-push)
+(defun /maybe-push-mark (&optional do-push)
   "push-mark, unless it is active."
   (unless (region-active-p)
     (when do-push (push-mark))))
 
-(defun latex/end-of-environment (&optional N do-push-mark)
+(defun end-of-environment (&optional N do-push-mark)
   "Move just past the end of the current latex environment.
 
 Leaves point outside the environment.
@@ -206,7 +208,7 @@ closing \"\\end\".
 DO-PUSH-MARK defaults to t when interactive, but mark is only
 pushed if region isn't active."
   (interactive "p\nd")
-  (latex//maybe-push-mark do-push-mark)
+  (/maybe-push-mark do-push-mark)
   (let ((start (point))
         (count (abs N))
         (direction 1)
@@ -217,7 +219,7 @@ pushed if region isn't active."
     (while (and (> count 0) (funcall movement-function))
       (cl-decf count))
     (when (> direction 0)    
-      (latex//forward-arguments)
+      (/forward-arguments)
       (skip-chars-forward "[:blank:]")
       (when (looking-at "\n")
         (forward-char 1)
@@ -230,7 +232,7 @@ pushed if region isn't active."
              (error "Unclosed \\begin?")
            (error "Unopened \\end?"))))))
 
-(defun latex/forward-environment (&optional N do-push-mark)
+(defun forward-environment (&optional N do-push-mark)
   "Move to the \\end of the next \\begin, or to the \\end of the current environment (whichever comes first) N times.
 
 Never goes into deeper environments.
@@ -238,7 +240,7 @@ Never goes into deeper environments.
 DO-PUSH-MARK defaults to t when interactive, but mark is only
 pushed if region isn't active."
   (interactive "p")
-  (latex//maybe-push-mark do-push-mark)
+  (/maybe-push-mark do-push-mark)
   (let ((start (point))
         (count (abs N))
         (direction (if (< N 0) -1 1)))
@@ -246,12 +248,12 @@ pushed if region isn't active."
                 (re-search-forward "\\\\\\(begin\\|end\\)\\b"
                                    nil t direction))
       (cl-decf count)
-      (if (latex//found-undesired-string direction)
-          (unless (latex/end-of-environment direction)
+      (if (/found-undesired-string direction)
+          (unless (end-of-environment direction)
             (error "Unmatched \\begin?"))
-        (latex//forward-arguments)))))
+        (/forward-arguments)))))
 
-(defun latex/beginning-of-environment (&optional N do-push-mark)
+(defun beginning-of-environment (&optional N do-push-mark)
   "Move to the beginning of the current latex environment.
 
 Leaves point outside the environment.
@@ -259,9 +261,9 @@ Leaves point outside the environment.
 DO-PUSH-MARK defaults to t when interactive, but mark is only
 pushed if region isn't active."
   (interactive "p")
-  (latex/end-of-environment (- N) do-push-mark))
+  (end-of-environment (- N) do-push-mark))
 
-(defun latex/backward-environment (&optional N do-push-mark)
+(defun backward-environment (&optional N do-push-mark)
   "Move to the \\begin of the next \\end, or to the \\begin of the current environment (whichever comes first) N times.
 
 Never goes into deeper environments.
@@ -269,12 +271,12 @@ Never goes into deeper environments.
 DO-PUSH-MARK defaults to t when interactive, but mark is only
 pushed if region isn't active."
   (interactive "p")
-  (latex/forward-environment (- N) do-push-mark))
+  (forward-environment (- N) do-push-mark))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;; Section navigation
-(defcustom latex/section-hierarchy
+(defcustom section-hierarchy
   '("\\\\headerbox\\_>"
     "\\\\subparagraph\\_>"
     "\\\\paragraph\\_>"
@@ -294,7 +296,7 @@ Ordered from deepest to highest level."
   :group 'latex-extra
   :package-version '(latex-extra . "1.8"))
 
-(defun latex/next-section (n &optional do-push-mark)
+(defun next-section (n &optional do-push-mark)
   "Move N (or 1) headers forward.
 
 Header stands for any string listed in `latex/section-hierarchy'.
@@ -304,9 +306,9 @@ Negative N goes backward.
 DO-PUSH-MARK defaults to t when interactive, but mark is only
 pushed if region isn't active."
   (interactive "p\nd")
-  (goto-char (latex//find-nth-section-with-predicate n 'always-t do-push-mark)))
+  (goto-char (/find-nth-section-with-predicate n #'always-t do-push-mark)))
 
-(defun latex/previous-section (n &optional do-push-mark)
+(defun previous-section (n &optional do-push-mark)
   "Move N (or 1) headers backward.
 
 Header stands for any string listed in `latex/section-hierarchy'.
@@ -315,11 +317,11 @@ DO-PUSH-MARK defaults to t when interactive, but mark is only
 pushed if region isn't active."
   (interactive "p\nd")
   (goto-char (line-beginning-position))
-  (when (latex//header-at-point)
+  (when (/header-at-point)
     (forward-char -1))
-  (latex/next-section (- (- n 1)) do-push-mark))
+  (next-section (- (- n 1)) do-push-mark))
 
-(defun latex/up-section (n &optional do-push-mark)
+(defun up-section (n &optional do-push-mark)
   "Move backward to the header that contains the current one.
 
 Header stands for any string listed in `latex/section-hierarchy'.
@@ -330,9 +332,9 @@ Negative N goes forward, but still goes \"up\" the hierarchy.
 DO-PUSH-MARK defaults to t when interactive, but mark is only
 pushed if region isn't active."
   (interactive "p\nd")
-  (goto-char (latex//find-nth-section-with-predicate (- n) 'latex/section< do-push-mark)))
+  (goto-char (/find-nth-section-with-predicate (- n) #'section< do-push-mark)))
 
-(defun latex/next-section-same-level (n &optional do-push-mark)
+(defun next-section-same-level (n &optional do-push-mark)
   "Move N (or 1) headers forward.
 
 Header stands for any string listed in `latex/section-hierarchy'.
@@ -347,30 +349,30 @@ The default binding for this key (C-c C-f) overrides a binding in
 C-c f). See the variable `latex/override-font-map' for more
 information (and how to disable this)."
   (interactive "p\nd")
-  (goto-char (latex//find-nth-section-with-predicate n 'latex/section<= do-push-mark)))
+  (goto-char (/find-nth-section-with-predicate n #'section<= do-push-mark)))
 
-(defun latex/previous-section-same-level (n &optional do-push-mark)
+(defun previous-section-same-level (n &optional do-push-mark)
   "Move N (or 1) headers backward.
 
-Header stands for any string listed in `latex/section-hierarchy'.
+Header stands for any string listed in `section-hierarchy'.
 
 DO-PUSH-MARK defaults to t when interactive, but mark is only
 pushed if region isn't active."
   (interactive "p\nd")
-  (latex/next-section-same-level (- n) do-push-mark))
+  (next-section-same-level (- n) do-push-mark))
 
-(defun latex//impl-previous-section ()
+(defun /impl-previous-section ()
   "Find the previous header, avoiding dependencies and chaining.
 Used for implementation."
   (let ((dest
          (save-match-data
            (save-excursion
              (when (looking-at "\\\\") (forward-char 1))
-             (when (search-forward-regexp (latex/section-regexp) nil :noerror -1)
+             (when (search-forward-regexp (section-regexp) nil :noerror -1)
                (match-beginning 0))))))
     (if dest (goto-char dest) nil)))
 
-(defun latex//find-nth-section-with-predicate (n pred do-push-mark)
+(defun /find-nth-section-with-predicate (n pred do-push-mark)
   "Find Nth header satisfying predicate PRED, return the start of last match.
 
 If this function fails, it returns original point position (so
@@ -393,24 +395,24 @@ determined by the positivity of N.
 \"previous-header\", otherwise it is ignored."
   (let* ((direction (if (> n 0) 1 -1))
          (amount (* n direction))
-         (hap (latex//header-at-point))                       ;header at point
+         (hap (/header-at-point))                       ;header at point
          (is-on-header-p hap)
          (result
           (save-match-data
             (save-excursion
-              (if (or is-on-header-p (latex//impl-previous-section))
+              (if (or is-on-header-p (/impl-previous-section))
                   (progn
-                    (setq hap (latex//header-at-point))
+                    (setq hap (/header-at-point))
                     (when (looking-at "\\\\")
                       (unless (or (eobp) (= amount 0))
                         (forward-char 1)))
                     (while (and (> amount 0)
                                 (search-forward-regexp
-                                 (latex/section-regexp)
+                                 (section-regexp)
                                  nil :noerror direction))
                       (save-match-data
-                        (when (eval (list pred hap (latex//header-at-point)))
-                          (setq hap (latex//header-at-point))
+                        (when (eval (list pred hap (/header-at-point)))
+                          (setq hap (/header-at-point))
                           (cl-decf amount))))
                     (if (= amount 0)
                         ;; Finished moving
@@ -424,40 +426,40 @@ determined by the positivity of N.
                 (if (< direction 0)
                     (goto-char (point-min))
                   (when (search-forward-regexp 
-                         (latex/section-regexp) nil :noerror direction)
+                         (section-regexp) nil :noerror direction)
                     (match-beginning 0))))))))
     (if (null (number-or-marker-p result))
         (point)
-      (latex//maybe-push-mark do-push-mark)
+      (/maybe-push-mark do-push-mark)
       result)))
 
-(defun latex//header-at-point ()
+(defun /header-at-point ()
   "Return header under point or nil, as per `latex/section-hierarchy'."
   (save-match-data
     (save-excursion
       (goto-char (line-beginning-position))
-      (when (looking-at (latex/section-regexp))
+      (when (looking-at (section-regexp))
         (match-string-no-properties 0)))))
 
-(defun latex/section<= (x y)
+(defun section<= (x y)
   "Non-nil if Y comes after (or is equal to) X in `latex/section-hierarchy'."
   (cl-member-if
    (lambda (it) (string-match it y))
    (cl-member-if (lambda (it) (string-match it x)) 
-                 latex/section-hierarchy)))
+                 section-hierarchy)))
 
-(defun latex/section< (x y)
+(defun section< (x y)
   "Non-nil if Y comes after X in `latex/section-hierarchy'."
   (cl-member-if
    (lambda (it) (string-match it y))
    (cdr-safe (cl-member-if (lambda (it) (string-match it x)) 
-                           latex/section-hierarchy))))
+                           section-hierarchy))))
 
-(defun latex/section-regexp ()
+(defun section-regexp ()
   "Return a regexp matching anything in `latex/section-hierarchy'."
-  (format "^\\(%s\\)" (mapconcat 'identity latex/section-hierarchy "\\|")))
+  (format "^\\(%s\\)" (mapconcat #'identity section-hierarchy "\\|")))
 
-(defun latex/beginning-of-line ()
+(defun beginning-of-line ()
   "Do `LaTeX-back-to-indentation' or `beginning-of-line'."
   (interactive)
   (let ((bef (point)))
@@ -467,10 +469,10 @@ determined by the positivity of N.
 
 
 ;;; Section Folding
-(defun latex/hide-show ()
+(defun hide-show ()
   "Hide or show current header and its contents."
   (interactive)
-  (if (latex//header-at-point)
+  (if (/header-at-point)
       (if (null (eq last-command 'latex/hide-show))
           (hide-leaves)
         (show-subtree)
@@ -478,9 +480,9 @@ determined by the positivity of N.
     (when (eq last-command-event 'tab)
       (define-key latex-extra-mode-map [tab] nil)
       (call-interactively (key-binding "\t" :accept-default))
-      (define-key latex-extra-mode-map [tab] 'latex/hide-show))))
+      (define-key latex-extra-mode-map [tab] #'hide-show))))
 
-(defun latex/hide-show-all ()
+(defun hide-show-all ()
   "Hide or show the contents of all headers."
   (interactive)
   (if (null (eq last-command 'latex/hide-show-all))
@@ -493,39 +495,39 @@ determined by the positivity of N.
 
 
 ;;; Autofilling
-(defun latex/auto-fill-function ()
+(defun auto-fill-function ()
   "Perform auto-fill unless point is inside an unsuitable environment.
 
 This function checks whether point is currently inside one of the
 LaTeX environments listed in `latex/no-autofill-environments'. If
 so, it inhibits automatic filling of the current paragraph."
-  (when (latex/do-auto-fill-p)
+  (when (do-auto-fill-p)
     (do-auto-fill)))
 
-(defcustom latex/should-auto-fill-$ t
+(defcustom should-auto-fill-$ t
   "If non-nil, inline math ($x=1$) will get auto-filled like text."
   :type 'boolean
   :group 'latex-extra
   :package-version '(latex-extra . "1.3.2"))
 
-(defun latex/do-auto-fill-p ()
+(defun do-auto-fill-p ()
   "Decide whether to auto-fill in current environment."
   (if (texmathp)
       (if (and (stringp (car-safe texmathp-why))
                (or (string= (car texmathp-why) "$")
                    (string= (car texmathp-why) "\\(")))
-          latex/should-auto-fill-$
+          should-auto-fill-$
         nil)
     t))
 
-;;;###autoload
-(defun latex/setup-auto-fill ()
+:autoload
+(defun setup-auto-fill ()
   "Set the function used to fill a paragraph to `latex/auto-fill-function'."
   (interactive)
-  (setq auto-fill-function 'latex/auto-fill-function))
+  (setq auto-fill-function #'auto-fill-function))
 
 ;;; Whitespace cleaning
-(defcustom latex/clean-up-whitespace t
+(defcustom clean-up-whitespace t
   "Type of whitespace to be erased by `latex/clean-fill-indent-environment'.
 
 Only excessive whitespace will be erased. That is, when there are
@@ -544,13 +546,13 @@ nil:     Doesn't erase any whitespace."
   :group 'latex-extra
   :package-version '(latex-extra . "1.0"))
 
-(defcustom latex/cleanup-do-fill t
+(defcustom cleanup-do-fill t
   "If nil, `latex/clean-fill-indent-environment' won't perform text-filling."
   :type 'boolean
   :group 'latex-extra
   :package-version '(latex-extra . "1.3"))
 
-(defun latex/clean-fill-indent-environment (&optional indent)
+(defun clean-fill-indent-environment (&optional indent)
   "Severely reorganise whitespace in current environment.
 
  (If you want the usual binding back for \"C-c C-q\", see `latex/override-fill-map')
@@ -576,32 +578,32 @@ It decides where to act in the following way:
           (setq bounds
                 (if (use-region-p)
                     (cons (region-beginning) (region-end))
-                  (latex//bounds-of-current-thing)))
+                  (/bounds-of-current-thing)))
           (setq indent (or indent (- (point) (line-beginning-position))))
           (narrow-to-region (car bounds) (cdr bounds))
           ;; Whitespace
           (goto-char (point-min))
-          (when latex/clean-up-whitespace
+          (when clean-up-whitespace
             (message "Cleaning up...")
-            (unless (eq latex/clean-up-whitespace 'lines)  (replace-regexp-everywhere "  +$" ""))
-            (unless (eq latex/clean-up-whitespace 'lines)  (replace-regexp-everywhere "  +\\([^% ]\\)" " \\1"))
-            (unless (eq latex/clean-up-whitespace 'spaces) (replace-regexp-everywhere "\n\n\n+" "\n\n")))
+            (unless (eq clean-up-whitespace 'lines)  (replace-regexp-everywhere "  +$" ""))
+            (unless (eq clean-up-whitespace 'lines)  (replace-regexp-everywhere "  +\\([^% ]\\)" " \\1"))
+            (unless (eq clean-up-whitespace 'spaces) (replace-regexp-everywhere "\n\n\n+" "\n\n")))
           ;; Autofill
           (goto-char (point-min))
-          (when latex/cleanup-do-fill
+          (when cleanup-do-fill
             (let* ((size (number-to-string (length (number-to-string (line-number-at-pos (point-max))))))
                    (message-string (concat "Filling line %" size "s / %" size "s.")))
               (goto-char (point-min))
               (forward-line 1)
               (while (not (eobp))
-                (if (latex/do-auto-fill-p)
+                (if (do-auto-fill-p)
                     (progn (LaTeX-fill-paragraph)
                            (forward-line 1))
                   (if (and (stringp (car-safe texmathp-why))
                            (string= (car texmathp-why) "\\["))
                       (progn (search-forward "\\]")
                              (forward-line 1))
-                    (latex/end-of-environment 1)))
+                    (end-of-environment 1)))
                 (message message-string (line-number-at-pos (point)) (line-number-at-pos (point-max))))))
           ;; Indentation
           (message "Indenting...")
@@ -613,11 +615,10 @@ It decides where to act in the following way:
           (delete-region (point-min) indent)))))
   (message "Done."))
 
-(defun latex//bounds-of-current-thing ()
+(defun /bounds-of-current-thing ()
   "Mark current section or environment, whichever comes first."
-  (declare (interactive-only t))
   (let ((begin (save-excursion (and (ignore-errors (LaTeX-find-matching-begin)) (point))))
-        (header (save-excursion (ignore-errors (latex//impl-previous-section)))))
+        (header (save-excursion (ignore-errors (/impl-previous-section)))))
     (if (or begin header)
         (progn
           (goto-char 
@@ -626,22 +627,22 @@ It decides where to act in the following way:
           (cons (point)
                 (if (looking-at-p "\\\\begin\\b")
                     (save-excursion
-                      (latex/forward-environment 1)
+                      (forward-environment 1)
                       (point))
                   (save-excursion
                     (let ((l (point)))
-                      (latex/next-section-same-level 1)
+                      (next-section-same-level 1)
                       (if (= l (point)) (point-max) l))))))
       (cons (point-min) (point-max)))))
 
 
 ;;; Compilation
-(defcustom latex/view-after-compile t
+(defcustom view-after-compile t
   "Start view-command at end of `latex/compile-commands-until-done'?"
   :type 'boolean
   :group 'latex-extra)
 
-(defcustom latex/max-runs 10
+(defcustom max-runs 10
   "Max number of times `TeX-command-master' can run.
 
 If it goes beyond this, we decide something's wrong.
@@ -650,14 +651,14 @@ Used by `latex/compile-commands-until-done'."
   :type 'integer
   :group 'latex-extra)
 
-(defcustom latex/view-skip-confirmation t
+(defcustom view-skip-confirmation t
   "If non-nil `latex/compile-commands-until-done' will NOT ask for confirmation on the \"VIEW\" command."
   :type 'boolean
   :group 'latex-extra
   :package-version '(latex-extra . "1.0"))
-(defvar latex/count-same-command 0)
+(defvar count-same-command 0)
 
-(defun latex/command-default (name)
+(defun command-default (name)
   "Next TeX command to use on file NAME."
   (cond ((if (string-equal name TeX-region)
              (TeX-check-files (concat name "." (TeX-output-extension))
@@ -677,13 +678,13 @@ Used by `latex/compile-commands-until-done'."
                                    TeX-command-Show))
         (TeX-command-Show)))
 
-(defcustom latex/next-error-skip-confirmation nil
+(defcustom next-error-skip-confirmation nil
   "If non-nil `latex/compile-commands-until-done' calls `TeX-next-error' without confirmation (if there is an error, of course)."
   :type 'boolean
   :group 'latex-extra
   :package-version '(latex-extra . "1.0"))
 
-(defun latex/compile-commands-until-done (clean-first)
+(defun compile-commands-until-done (clean-first)
   "Fully compile the current document, then view it.
 
 If there are errors, call `TeX-next-error' instead of viewing.
@@ -705,33 +706,33 @@ is wrong).
   (let* ((initial-buffer (buffer-name))
          (TeX-process-asynchronous nil)
          (master-file (TeX-master-file))
-         (next-command (latex/command-default master-file))
+         (next-command (command-default master-file))
          (counter 0))
     (while (and 
             (> counter -1)
             (not (equal next-command TeX-command-Show)))
-      (when (> counter latex/max-runs)
+      (when (> counter max-runs)
         (error "Number of commands run exceeded %d (%S). Something is probably wrong"
-               latex/max-runs 'latex/max-runs))
+               max-runs 'latex/max-runs))
       (message "%d Doing: %s" (cl-incf counter) next-command)
       (set-buffer initial-buffer)
       (TeX-command next-command 'TeX-master-file)
       (if (null (plist-get TeX-error-report-switches (intern master-file)))
           (if (string= next-command "BibTeX")
               (setq next-command "LaTeX")
-            (setq next-command (latex/command-default master-file)))
+            (setq next-command (command-default master-file)))
         (setq counter -1)
-        (when (or latex/next-error-skip-confirmation
+        (when (or next-error-skip-confirmation
                   (y-or-n-p "Error found. Visit it? "))
           (TeX-next-error t))))
     (when (>= counter 0) ;; 
       (set-buffer initial-buffer)
-      (when latex/view-after-compile
-        (if latex/view-skip-confirmation
+      (when view-after-compile
+        (if view-skip-confirmation
             (TeX-view)
           (TeX-command TeX-command-Show 'TeX-master-file))))))
 
-(defvar latex/error-buffer-font-lock
+(defvar error-buffer-font-lock
   '(("--- .* ---" 0 font-lock-keyword-face)
     ("^l\\.[0-9]+" 0 'underline)
     ("^\\([[:alpha:]]+\\):\\(.*\\)$"
@@ -756,7 +757,7 @@ is wrong).
 
 
 ;;; Setup and minor mode
-(defcustom latex/override-preview-map t
+(defcustom override-preview-map t
   "If non-nil, move the `preview-map' in LaTeX-mode from \"C-c C-p\" to \"C-c p\".
 
 This this key is needed bind for `latex/previous-section'.
@@ -769,7 +770,7 @@ else."
   :group 'latex-extra
   :package-version '(latex-extra . "1.0"))
 
-(defun latex/-rebind-font-list ()
+(defun /rebind-font-list ()
   "Make add keys to `TeX-font-list' that don't use control."
   (when (boundp 'TeX-font-list)
     (mapc (lambda (x)
@@ -779,7 +780,7 @@ else."
                             LaTeX-font-list))))
           LaTeX-font-list)))
 
-(defcustom latex/override-font-map t
+(defcustom override-font-map t
   "Should we rebind `TeX-font' to \"C-c f\"?
 
 This is necessary because the usual keybind conflicts with
@@ -796,7 +797,7 @@ something else."
   :package-version '(latex-extra . "1.7"))
 (defvaralias 'latex/override-font-list 'latex/override-font-map)
 
-(defcustom latex/override-fill-map t
+(defcustom override-fill-map t
   "If non-nil, `latex/clean-fill-indent-environment' will be bound to \"C-c C-q\".
 
 The reason someone what want to disable this, is that \"C-c C-q\"
@@ -821,32 +822,34 @@ to something else."
   :package-version '(latex-extra . "1.7.3"))
 
 (declare-function preview-map "preview")
-(defun latex/setup ()
+(defun setup ()
   "Prepare all latex-extra features."
-  (add-hook 'latex-extra-mode-hook #'latex/setup-auto-fill)
+  (add-hook 'latex-extra-mode-hook #'setup-auto-fill)
   (add-to-list 'LaTeX-clean-intermediate-suffixes "\\.tdo") ;todonotes package
   (add-to-list 'LaTeX-clean-intermediate-suffixes "Notes\\.bib") ;revtex package
-  (if (null latex/override-fill-map)
+  (if (null override-fill-map)
       (define-key latex-extra-mode-map "" nil)
-    (define-key latex-extra-mode-map "" #'latex/clean-fill-indent-environment))
-  (if (null latex/override-font-map)
+    (define-key latex-extra-mode-map "" #'clean-fill-indent-environment))
+  (if (null override-font-map)
       (define-key latex-extra-mode-map "" nil)
     (message "%S changed to \"C-c f\"." 'TeX-font)
-    (define-key latex-extra-mode-map "" #'latex/next-section-same-level)
+    (define-key latex-extra-mode-map "" #'next-section-same-level)
     (define-key latex-extra-mode-map "f" #'TeX-font))
-  (latex/-rebind-font-list)
-  (if (null latex/override-preview-map)
+  (/rebind-font-list)
+  (if (null override-preview-map)
       (define-key latex-extra-mode-map "" nil)
     (message "%S changed to \"C-c p\"." 'preview-map)
-    (define-key latex-extra-mode-map "" #'latex/previous-section)
+    (define-key latex-extra-mode-map "" #'previous-section)
     (define-key latex-extra-mode-map "p" #'preview-map)))
 
-;;;###autoload
-(defun latex/setup-keybinds ()
+:autoload
+(defun setup-keybinds ()
   "Obsolete function. Use (add-hook 'LaTeX-mode-hook #'latex-extra-mode) instead."
   (interactive)
   (declare (obsolete "use (add-hook 'LaTeX-mode-hook #'latex-extra-mode) instead." "1.8"))
   (add-hook 'LaTeX-mode-hook #'latex-extra-mode))
+
+)
 
 ;;;###autoload
 (define-minor-mode latex-extra-mode
