@@ -25,8 +25,12 @@ compilation errors!
 ## Content Folding ##
 
 Similar to how org-mode hides and displays of subtrees, if you hit
-**TAB** on a section header _latex-extra_ will hide the contents of that
-section for you. Hitting tab twice will expand it again.
+**TAB** on a section header _latex-extra_ will hide the contents of
+that section for you. Hitting tab twice will expand it again.  
+This will **not** interfere with whatever with other keybinds you have
+set for **TAB**, such as yasnippet or auto-completion.
+
+**Shift-TAB** will do the same for the entire buffer.
 
 Of course, the same goes for chapters, subsections, etc.
 
