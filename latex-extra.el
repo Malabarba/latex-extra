@@ -772,7 +772,10 @@ is wrong).
         (special-mode)
         (let ((inhibit-read-only t))
           (font-lock-add-keywords nil latex/error-buffer-font-lock)
-          (font-lock-ensure))))))
+          (if (fboundp 'font-lock-ensure)
+              (font-lock-ensure)
+            (with-no-warnings
+              (font-lock-fontify-buffer))))))))
 
 
 ;;; Setup and minor mode
