@@ -743,8 +743,13 @@ is wrong).
         (setq counter -1)
         (when (or latex/next-error-skip-confirmation
                   (y-or-n-p "Error found. Visit it? "))
-          (TeX-next-error t))))
-    (when (>= counter 0) ;; 
+          ;; `TeX-next-error' number of arguments changed at some
+          ;; point.
+          (with-no-warnings
+            (condition-case nil
+                (TeX-next-error 1 'reparse)
+              (error (TeX-next-error t)))))))
+    (when (>= counter 0) ;;
       (set-buffer initial-buffer)
       (when latex/view-after-compile
         (if latex/view-skip-confirmation
