@@ -7,93 +7,93 @@
 ;; Version: 1.8
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1") (cl-lib "0.5"))
-;; 
+;;
 ;; Prefix: latex
 ;; Separator: /
 
 ;;; Commentary:
-;; 
-;; latex-extra 
+;;
+;; latex-extra
 ;; ===========
-;; 
+;;
 ;; Defines extra commands and keys for LaTeX-mode. To activate (after
 ;; installing from melpa) just call
-;; 
+;;
 ;;     (add-hook 'LaTeX-mode-hook #'latex-extra-mode)
 ;;
 ;; The additions of this package fall into the following three
 ;; categories:
-;; 
+;;
 ;; 1-Key Compilation
 ;; =================
-;; 
+;;
 ;; Tired of hitting C-c C-c 4 times (latex, bibtex, latex, view) for
 ;; the document to compile? This defines a much needed command that does
 ;; *everything* at once, and even handles compilation errors!
-;; 
+;;
 ;;   C-c C-a `latex/compile-commands-until-done'
-;; 
+;;
 ;;
 ;; Content Folding
 ;; ===============
-;; 
+;;
 ;; Similar to how org-mode hides and displays of subtrees, if you hit
 ;; <TAB> on a section header latex-extra will hide the contents of
 ;; that section for you. Hitting tab twice will expand it again.
-;; 
+;;
 ;; Of course, the same goes for chapters, subsections, etc.
-;; 
+;;
 ;; Navigation
 ;; ==========
-;; 
+;;
 ;; Five new keybindings are defined for navigating between
 ;; sections/chapters. These are meant to be intuitive to people familiar
 ;; with `org-mode'.
-;; 
-;;   C-c C-n `latex/next-section'  
+;;
+;;   C-c C-n `latex/next-section'
 ;;     Goes forward to the next section-like command in the buffer (\part,
 ;;     \chapter, \(sub)section, or \(sub)paragraph, whichever comes first).
-;;   C-c C-u `latex/up-section'  
+;;   C-c C-u `latex/up-section'
 ;;     Goes backward to the previous section-like command containing this
 ;;     one. For instance, if you're inside a subsection it goes up to the
 ;;     section that contains it.
-;;   C-c C-f `latex/next-section-same-level'  
+;;   C-c C-f `latex/next-section-same-level'
 ;;     Like next-section, except it skips anything that's "lower-level" then
 ;;     the current one. For instance, if you're inside a subsection it finds
 ;;     the next subsection (or higher), skipping any subsubsections or
 ;;     paragraphs.
 ;;   C-M-f `latex/forward-environment'
 ;;     Skip over the next environment, or exit the current one, whichever
-;;     comes first. 
+;;     comes first.
 ;;   C-M-e `latex/end-of-environment'
 ;;     Exit the current environment, and skip over some whitespace
 ;;     afterwards. (Like `LaTeX-find-matching-end', but a little more useful.)
-;; 
+;;
 ;;   C-M-b `latex/backward-environment'
 ;;   C-M-a `latex/beginning-of-environment'
-;;   C-c C-p `latex/previous-section'  
-;;   C-c C-b `latex/previous-section-same-level'  
+;;   C-c C-p `latex/previous-section'
+;;   C-c C-b `latex/previous-section-same-level'
 ;;     Same as above, but go backward.
-;; 
+;;
 ;; Whitespace Handling
 ;; ===================
-;; 
+;;
 ;; `latex-extra.el' improves `auto-fill-mode' so that it only applies to
 ;; text, not equations. To use this improvement, just activate
 ;; `auto-fill-mode' as usual.
-;; 
-;; It also defines a new command:  
-;; 
-;;   C-c C-q `latex/clean-fill-indent-environment'  
+;;
+;; It also defines a new command:
+;;
+;;   C-c C-q `latex/clean-fill-indent-environment'
 ;;     Completely cleans up the entire current environment. This involves:
-;; 
+;;
 ;;     1. Removing extraneous spaces and blank lines.
 ;;     2. Filling text (and only text, not equations).
 ;;     3. Indenting everything.
-;; 
+;;
 ;; Small User Experience Improvements
 ;; ==================================
-;; 
+;;
 ;; The buffer used to display LaTeX errors is typically a regular text
 ;; buffer in `fundamental-mode'. *latex-extra* switches it to
 ;; `special-mode' and adds some colors to the display.
@@ -122,7 +122,7 @@
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
-;; 
+;;
 
 ;;; Change Log:
 ;; 1.8   - 2014/09/19 - Improve error buffers.
@@ -236,14 +236,14 @@ pushed if region isn't active."
       (setq movement-function 'LaTeX-find-matching-begin))
     (while (and (> count 0) (funcall movement-function))
       (cl-decf count))
-    (when (> direction 0)    
+    (when (> direction 0)
       (latex//forward-arguments)
       (skip-chars-forward "[:blank:]")
       (when (looking-at "\n")
         (forward-char 1)
         (skip-chars-forward "[:blank:]")))
     ;; Return t or nil
-    (cl-case count     
+    (cl-case count
       (0 t)
       (1 (message "Reached the end.") nil)
       (t (if (> direction 0)
@@ -439,11 +439,11 @@ determined by the positivity of N.
                       (if (= amount n)
                           (message "No sections %s! (satisfying %S)"
                                    (if (> direction 0) "below" "above") pred)
-                        (message "Reached the %s." 
+                        (message "Reached the %s."
                                  (if (> direction 0) "bottom" "top")))))
                 (if (< direction 0)
                     (goto-char (point-min))
-                  (when (search-forward-regexp 
+                  (when (search-forward-regexp
                          (latex/section-regexp) nil :noerror direction)
                     (match-beginning 0))))))))
     (if (null (number-or-marker-p result))
@@ -463,14 +463,14 @@ determined by the positivity of N.
   "Non-nil if Y comes after (or is equal to) X in `latex/section-hierarchy'."
   (cl-member-if
    (lambda (it) (string-match it y))
-   (cl-member-if (lambda (it) (string-match it x)) 
+   (cl-member-if (lambda (it) (string-match it x))
                  latex/section-hierarchy)))
 
 (defun latex/section< (x y)
   "Non-nil if Y comes after X in `latex/section-hierarchy'."
   (cl-member-if
    (lambda (it) (string-match it y))
-   (cdr-safe (cl-member-if (lambda (it) (string-match it x)) 
+   (cdr-safe (cl-member-if (lambda (it) (string-match it x))
                            latex/section-hierarchy))))
 
 (defun latex/section-regexp ()
@@ -640,7 +640,7 @@ It decides where to act in the following way:
         (header (save-excursion (ignore-errors (latex//impl-previous-section)))))
     (if (or begin header)
         (progn
-          (goto-char 
+          (goto-char
            (max (or begin (point-min))
                 (or header (point-min))))
           (cons (point)
@@ -727,7 +727,7 @@ is wrong).
          (master-file (TeX-master-file))
          (next-command (latex/command-default master-file))
          (counter 0))
-    (while (and 
+    (while (and
             (> counter -1)
             (not (equal next-command TeX-command-Show)))
       (when (> counter latex/max-runs)
@@ -762,7 +762,7 @@ is wrong).
     ("^\\([[:alpha:]]+\\):\\(.*\\)$"
      (1 'compilation-warning) (2 font-lock-constant-face))
     ("^\\(<recently read>\\) \\(.*\\)$"
-     (1 'compilation-warning) (2 font-lock-constant-face))) 
+     (1 'compilation-warning) (2 font-lock-constant-face)))
   "Font lock rules used in \"*TeX help*\" buffers.")
 
 (defadvice TeX-help-error (around latex/around-TeX-help-error-advice () activate)
@@ -878,7 +878,7 @@ to something else."
 
 ;;;###autoload
 (define-minor-mode latex-extra-mode
-  "Defines extra commands and keys for LaTeX-mode. 
+  "Defines extra commands and keys for LaTeX-mode.
 
 To activate just call
     (add-hook 'LaTeX-mode-hook #'latex-extra-mode)
@@ -902,29 +902,29 @@ Five new keybindings are defined for navigating between
 sections/chapters. These are meant to be intuitive to people familiar
 with `org-mode'.
 
-  C-c C-n `latex/next-section'  
+  C-c C-n `latex/next-section'
     Goes forward to the next section-like command in the buffer (\part,
     \chapter, \(sub)section, or \(sub)paragraph, whichever comes first).
-  C-c C-u `latex/up-section'  
+  C-c C-u `latex/up-section'
     Goes backward to the previous section-like command containing this
     one. For instance, if you're inside a subsection it goes up to the
     section that contains it.
-  C-c C-f `latex/next-section-same-level'  
+  C-c C-f `latex/next-section-same-level'
     Like next-section, except it skips anything that's \"lower-level\" then
     the current one. For instance, if you're inside a subsection it finds
     the next subsection (or higher), skipping any subsubsections or
     paragraphs.
   C-M-f `latex/forward-environment'
     Skip over the next environment, or exit the current one, whichever
-    comes first. 
+    comes first.
   C-M-e `latex/end-of-environment'
     Exit the current environment, and skip over some whitespace
     afterwards. (Like `LaTeX-find-matching-end', but a little more useful.)
 
   C-M-b `latex/backward-environment'
   C-M-a `latex/beginning-of-environment'
-  C-c C-p `latex/previous-section'  
-  C-c C-b `latex/previous-section-same-level'  
+  C-c C-p `latex/previous-section'
+  C-c C-b `latex/previous-section-same-level'
     Same as above, but go backward.
 
 Whitespace Handling
@@ -934,9 +934,9 @@ Whitespace Handling
 text, not equations. To use this improvement, just activate
 `auto-fill-mode' as usual.
 
-It also defines a new command:  
+It also defines a new command:
 
-  C-c C-q `latex/clean-fill-indent-environment'  
+  C-c C-q `latex/clean-fill-indent-environment'
     Completely cleans up the entire current environment. This involves:
 
     1. Removing extraneous spaces and blank lines.
