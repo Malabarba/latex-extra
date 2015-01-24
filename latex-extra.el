@@ -278,7 +278,7 @@ Leaves point outside the environment.
 
 DO-PUSH-MARK defaults to t when interactive, but mark is only
 pushed if region isn't active."
-  (interactive "p")
+  (interactive "p\nd")
   (latex/end-of-environment (- N) do-push-mark))
 
 (defun latex/backward-environment (&optional N do-push-mark)
