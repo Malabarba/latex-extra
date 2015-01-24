@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/Bruce-Connor/latex-extra
-;; Version: 1.8
+;; Version: 1.8.1
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1") (cl-lib "0.5"))
 ;;
@@ -158,8 +158,8 @@
 (require 'cl-lib)
 (require 'outline)
 
-(defconst latex-extra-version "1.8" "Version of the latex-extra.el package.")
-(defconst latex-extra-version-int 19 "Version of the latex-extra.el package, as an integer.")
+(defconst latex-extra-version "1.8.1" "Version of the latex-extra.el package.")
+(defconst latex-extra-version-int 20 "Version of the latex-extra.el package, as an integer.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
