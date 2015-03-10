@@ -745,10 +745,7 @@ is wrong).
                   (y-or-n-p "Error found. Visit it? "))
           ;; `TeX-next-error' number of arguments changed at some
           ;; point.
-          (with-no-warnings
-            (condition-case nil
-                (TeX-next-error 1 'reparse)
-              (error (TeX-next-error t)))))))
+          (call-interactively #'TeX-next-error))))
     (when (>= counter 0) ;;
       (set-buffer initial-buffer)
       (when latex/view-after-compile
