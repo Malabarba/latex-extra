@@ -492,8 +492,8 @@ determined by the positivity of N.
   (interactive)
   (if (latex//header-at-point)
       (if (null (eq last-command 'latex/hide-show))
-          (hide-leaves)
-        (show-subtree)
+          (with-no-warnings (hide-leaves))
+        (with-no-warnings (show-subtree))
         (setq this-command nil))
     (when (eq last-command-event 'tab)
       (define-key latex-extra-mode-map [tab] nil)
@@ -507,8 +507,8 @@ determined by the positivity of N.
       (save-excursion
         (goto-char (point-min))
         (while (outline-next-heading)
-          (hide-leaves)))
-    (show-all)
+          (with-no-warnings (hide-leaves))))
+    (with-no-warnings (show-all))
     (setq this-command nil)))
 
 
