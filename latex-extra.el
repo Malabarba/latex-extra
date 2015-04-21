@@ -634,7 +634,8 @@ It decides where to act in the following way:
   (message "Done."))
 
 (defun latex//bounds-of-current-thing ()
-  "Mark current section or environment, whichever comes first."
+  "Return (begin . end) of current section or environment.
+Move point to begin."
   (declare (interactive-only t))
   (let ((begin (save-excursion (and (ignore-errors (LaTeX-find-matching-begin)) (point))))
         (header (save-excursion (ignore-errors (latex//impl-previous-section)))))
@@ -644,9 +645,10 @@ It decides where to act in the following way:
            (max (or begin (point-min))
                 (or header (point-min))))
           (cons (point)
-                (if (looking-at-p "\\\\begin\\b")
+                (if (looking-at-p (rx "\\begin" word-end))
                     (save-excursion
                       (latex/forward-environment 1)
+                      (skip-chars-backward "\n\r[:blank:]")
                       (point))
                   (save-excursion
                     (let ((l (point)))
