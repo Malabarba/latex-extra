@@ -527,6 +527,10 @@ so, it inhibits automatic filling of the current paragraph."
   :group 'latex-extra
   :package-version '(latex-extra . "1.3.2"))
 
+(defun latex/dont-auto-fill-p ()
+  "Decide whether to auto-fill in current environment."
+  (not (latex/do-auto-fill-p)))
+
 (defun latex/do-auto-fill-p ()
   "Decide whether to auto-fill in current environment."
   (if (texmathp)
