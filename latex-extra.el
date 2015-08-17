@@ -479,10 +479,12 @@ determined by the positivity of N.
 (defun latex/beginning-of-line ()
   "Do `LaTeX-back-to-indentation' or `beginning-of-line'."
   (interactive)
-  (let ((bef (point)))
-    (LaTeX-back-to-indentation)
-    (when (= bef (point))
-      (beginning-of-line))))
+  (if visual-line-mode
+      (call-interactively #'beginning-of-visual-line)
+    (let ((bef (point)))
+      (LaTeX-back-to-indentation)
+      (when (= bef (point))
+        (beginning-of-line)))))
 
 
 ;;; Section Folding
@@ -531,15 +533,20 @@ so, it inhibits automatic filling of the current paragraph."
   "Decide whether to auto-fill in current environment."
   (not (latex/do-auto-fill-p)))
 
+(defcustom latex/no-fill-environments '("tabular")
+  "List of environments inside which we don't fill paragraphs."
+  :type '(repeat string))
+
 (defun latex/do-auto-fill-p ()
   "Decide whether to auto-fill in current environment."
-  (if (texmathp)
-      (if (and (stringp (car-safe texmathp-why))
-               (or (string= (car texmathp-why) "$")
-                   (string= (car texmathp-why) "\\(")))
-          latex/should-auto-fill-$
-        nil)
-    t))
+  (and (if (texmathp)
+           (if (and (stringp (car-safe texmathp-why))
+                    (or (string= (car texmathp-why) "$")
+                        (string= (car texmathp-why) "\\(")))
+               latex/should-auto-fill-$
+             nil)
+         t)
+       (not (member (LaTeX-current-environment) latex/no-fill-environments))))
 
 ;;;###autoload
 (defun latex/setup-auto-fill ()
