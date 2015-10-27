@@ -691,26 +691,6 @@ Used by `latex/compile-commands-until-done'."
   :package-version '(latex-extra . "1.0"))
 (defvar latex/count-same-command 0)
 
-(defun latex/command-default (name)
-  "Next TeX command to use on file NAME."
-  (cond ((if (string-equal name TeX-region)
-             (TeX-check-files (concat name "." (TeX-output-extension))
-                              (list name)
-                              TeX-file-extensions)
-           (TeX-save-document (TeX-master-file)))
-         TeX-command-default)
-        ((and (memq major-mode '(doctex-mode latex-mode))
-              (TeX-check-files (concat name ".bbl")
-                               (mapcar 'car
-                                       (LaTeX-bibliography-list))
-                               BibTeX-file-extensions))
-         ;; We should check for bst files here as well.
-         TeX-command-BibTeX)
-        ((TeX-process-get-variable name
-                                   'TeX-command-next
-                                   TeX-command-Show))
-        (TeX-command-Show)))
-
 (defcustom latex/next-error-skip-confirmation nil
   "If non-nil `latex/compile-commands-until-done' calls `TeX-next-error' without confirmation (if there is an error, of course)."
   :type 'boolean
@@ -739,7 +719,7 @@ is wrong).
   (let* ((initial-buffer (buffer-name))
          (TeX-process-asynchronous nil)
          (master-file (TeX-master-file))
-         (next-command (latex/command-default master-file))
+         (next-command (TeX-command-default master-file))
          (counter 0))
     (while (and
             (> counter -1)
@@ -750,10 +730,12 @@ is wrong).
       (message "%d Doing: %s" (cl-incf counter) next-command)
       (set-buffer initial-buffer)
       (TeX-command next-command 'TeX-master-file)
+      ;; `TeX-command' occasionally changes current buffer.
+      (set-buffer initial-buffer)
       (if (null (plist-get TeX-error-report-switches (intern master-file)))
           (if (string= next-command "BibTeX")
               (setq next-command "LaTeX")
-            (setq next-command (latex/command-default master-file)))
+            (setq next-command (TeX-command-default master-file)))
         (setq counter -1)
         (when (or latex/next-error-skip-confirmation
                   (y-or-n-p "Error found. Visit it? "))
