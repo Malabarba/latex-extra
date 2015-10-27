@@ -1,4 +1,4 @@
-;;; latex-extra.el --- Adds several useful functionalities to LaTeX-mode.
+;; latex-extra.el --- Adds several useful functionalities to LaTeX-mode.
 
 ;; Copyright (C) 2013 Artur Malabarba <bruce.connor.am@gmail.com>
 
@@ -133,24 +133,31 @@
 (require 'cl-lib)
 (require 'outline)
 
+(declare-function lm-version "lisp-mnt")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
+  (require 'lisp-mnt)
   (message "Your latex-version is: %s, and your emacs version is: %s.\nPlease include this in your report!"
-           latex-extra-version emacs-version)
+           (lm-version "latex-extra") emacs-version)
   (browse-url "https://github.com/Malabarba/latex-extra/issues/new"))
+(defgroup latex-extra nil
+  "Customization group for latex-extra."
+  :prefix "latex/"
+  :group 'emacs
+  :group 'LaTeX
+  :package-version '(latex-extra . "1.12"))
 (defun latex-extra-customize ()
   "Open the customisation menu in the `latex-extra' group."
   (interactive)
   (customize-group 'latex-extra t))
 
 ;;; Implementation
-(defun replace-regexp-everywhere (reg rep &optional start end)
+(defun latex//replace-regexp-everywhere (reg rep &optional start end)
   "Version of `replace-regexp' usable in lisp code."
   (goto-char (or start (point-min)))
   (while (re-search-forward reg end t)
     (replace-match rep nil nil)))
-(defun always-t (&rest x) "Return t." t)
 
 (defvar latex-extra-mode-map
   (let ((map (make-sparse-keymap)))
@@ -297,7 +304,7 @@ Negative N goes backward.
 DO-PUSH-MARK defaults to t when interactive, but mark is only
 pushed if region isn't active."
   (interactive "p\nd")
-  (goto-char (latex//find-nth-section-with-predicate n 'always-t do-push-mark)))
+  (goto-char (latex//find-nth-section-with-predicate n (lambda (_) t) do-push-mark)))
 
 (defun latex/previous-section (n &optional do-push-mark)
   "Move N (or 1) headers backward.
@@ -589,9 +596,9 @@ It decides where to act in the following way:
           (goto-char (point-min))
           (when latex/clean-up-whitespace
             (message "Cleaning up...")
-            (unless (eq latex/clean-up-whitespace 'lines)  (replace-regexp-everywhere "  +$" ""))
-            (unless (eq latex/clean-up-whitespace 'lines)  (replace-regexp-everywhere "  +\\([^% ]\\)" " \\1"))
-            (unless (eq latex/clean-up-whitespace 'spaces) (replace-regexp-everywhere "\n\n\n+" "\n\n")))
+            (unless (eq latex/clean-up-whitespace 'lines)  (latex//replace-regexp-everywhere "  +$" ""))
+            (unless (eq latex/clean-up-whitespace 'lines)  (latex//replace-regexp-everywhere "  +\\([^% ]\\)" " \\1"))
+            (unless (eq latex/clean-up-whitespace 'spaces) (latex//replace-regexp-everywhere "\n\n\n+" "\n\n")))
           ;; Autofill
           (goto-char (point-min))
           (when latex/cleanup-do-fill
@@ -732,6 +739,7 @@ is wrong).
      (1 'compilation-warning) (2 font-lock-constant-face)))
   "Font lock rules used in \"*TeX help*\" buffers.")
 
+(defvar latex-extra-mode)
 (defadvice TeX-help-error (around latex/around-TeX-help-error-advice () activate)
   "Activate `special-mode' and add font-locking in \"*TeX Help*\" buffers."
   (if (null latex-extra-mode)
