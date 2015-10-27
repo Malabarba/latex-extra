@@ -3,8 +3,8 @@
 ;; Copyright (C) 2013 Artur Malabarba <bruce.connor.am@gmail.com>
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
-;; URL: http://github.com/Bruce-Connor/latex-extra
-;; Version: 1.11
+;; URL: http://github.com/Malabarba/latex-extra
+;; Version: 1.12
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1") (cl-lib "0.5"))
 ;;
@@ -124,31 +124,6 @@
 ;; GNU General Public License for more details.
 ;;
 
-;;; Change Log:
-;; 1.8   - 2014/09/19 - Improve error buffers.
-;; 1.8   - 2014/09/13 - Org-like folding. Hide/display subtrees with latex/hide-show.
-;; 1.8   - 2014/09/11 - Add \appendix to latex/section-hierarchy.
-;; 1.8   - 2014/09/11 - Refactor into a minor mode `latex-extra-mode'.
-;; 1.7.6 - 2014/08/11 - latex/section-regexp no longer wrongly matches things like \partial.
-;; 1.7.5 - 2014/05/07 - Fixed next/previous-section bug at top of file.
-;; 1.7.4 - 2014/03/25 - Fixed url in latex-bug-report.
-;; 1.7.3 - 2013/12/01 - Improve region choosing for latex/clean-fill-indent-environment.
-;; 1.7.3 - 2013/12/01 - latex/override-fill-map.
-;; 1.7.3 - 2013/12/01 - Fix next-section.
-;; 1.7.2 - 2013/11/29 - Only push-mark when interactive and region not active.
-;; 1.7.1 - 2013/11/29 - latex/do-auto-fill-p also knows "\\(".
-;; 1.7   - 2013/11/25 - latex/override-font-map.
-;; 1.6   - 2013/11/21 - latex/clean-fill-indent-environment now marks sections as well as environments.
-;; 1.5   - 2013/11/21 - Add a couple of LaTeX-clean-intermediate-suffixes.
-;; 1.4   - 2013/11/12 - Small fix for latex/compile-commands-until-done after bibtex.
-;; 1.3.3 - 2013/11/03 - latex/should-auto-fill-$ variable
-;; 1.3   - 2013/11/03 - latex/cleanup-do-fill controls whether to fill
-;; 1.3   - 2013/11/03 - Use texmathp instead of manually parsing for math
-;; 1.3   - 2013/11/03 - autoload latex/setup-auto-fill
-;; 1.2.3 - 2013/10/25 - More fix for latex/clean-fill-indent-environment
-;; 1.2.2 - 2013/10/23 - Fix for latex/clean-fill-indent-environment
-;; 1.2.1 - 2013/10/11 - Fixed previous section
-;; 1.2.1 - 2013/10/11 - Rename latex-customize
 ;;; Code:
 
 (require 'tex)
@@ -158,13 +133,12 @@
 (require 'cl-lib)
 (require 'outline)
 
-(defconst latex-extra-version "1.11" "Version of the latex-extra.el package.")
 (defun latex-bug-report ()
   "Opens github issues page in a web browser. Please send me any bugs you find, and please include your Emacs and latex versions."
   (interactive)
   (message "Your latex-version is: %s, and your emacs version is: %s.\nPlease include this in your report!"
-    latex-extra-version emacs-version)
-  (browse-url "https://github.com/Bruce-Connor/latex-extra/issues/new"))
+           latex-extra-version emacs-version)
+  (browse-url "https://github.com/Malabarba/latex-extra/issues/new"))
 (defun latex-extra-customize ()
   "Open the customisation menu in the `latex-extra' group."
   (interactive)
