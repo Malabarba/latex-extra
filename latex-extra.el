@@ -479,12 +479,14 @@ determined by the positivity of N.
 (defun latex/beginning-of-line ()
   "Do `LaTeX-back-to-indentation' or `beginning-of-line'."
   (interactive)
-  (if visual-line-mode
-      (call-interactively #'beginning-of-visual-line)
-    (let ((bef (point)))
-      (LaTeX-back-to-indentation)
-      (when (= bef (point))
-        (beginning-of-line)))))
+  (let ((o (point)))
+    (if visual-line-mode
+        (beginning-of-visual-line)
+      (beginning-of-line))
+    (let ((beg (point)))
+      (skip-chars-forward "[:blank:]")
+      (when (= (point) o)
+        (goto-char beg)))))
 
 
 ;;; Section Folding
