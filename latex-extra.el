@@ -132,6 +132,7 @@
 (require 'texmathp)
 (require 'cl-lib)
 (require 'outline)
+(require 'preview)
 
 (declare-function lm-version "lisp-mnt")
 (defun latex-bug-report ()
@@ -823,7 +824,6 @@ to something else."
   :group 'latex-extra
   :package-version '(latex-extra . "1.7.3"))
 
-(declare-function preview-map "preview")
 (defun latex/setup ()
   "Prepare all latex-extra features."
   (add-hook 'latex-extra-mode-hook #'latex/setup-auto-fill)
@@ -842,7 +842,7 @@ to something else."
       (define-key latex-extra-mode-map "" nil)
     (message "%S changed to \"C-c p\"." 'preview-map)
     (define-key latex-extra-mode-map "" #'latex/previous-section)
-    (define-key latex-extra-mode-map "p" #'preview-map)))
+    (define-key latex-extra-mode-map "p" preview-map)))
 
 ;;;###autoload
 (defun latex/setup-keybinds ()
