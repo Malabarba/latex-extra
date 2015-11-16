@@ -305,7 +305,7 @@ Negative N goes backward.
 DO-PUSH-MARK defaults to t when interactive, but mark is only
 pushed if region isn't active."
   (interactive "p\nd")
-  (goto-char (latex//find-nth-section-with-predicate n (lambda (_) t) do-push-mark)))
+  (goto-char (latex//find-nth-section-with-predicate n (lambda (&rest _) t) do-push-mark)))
 
 (defun latex/previous-section (n &optional do-push-mark)
   "Move N (or 1) headers backward.
