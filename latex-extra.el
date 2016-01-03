@@ -583,7 +583,8 @@ It decides where to act in the following way:
  4. If inside a document environment, act on it.
  5. If neither of that happened, act on entire buffer."
   (interactive)
-  (let (bounds)
+  (let ((has-final-linebreak nil)
+        bounds)
     (save-match-data
       (save-excursion
         (save-restriction
@@ -601,6 +602,8 @@ It decides where to act in the following way:
             (unless (eq latex/clean-up-whitespace 'lines)  (latex//replace-regexp-everywhere "  +\\([^% ]\\)" " \\1"))
             (unless (eq latex/clean-up-whitespace 'spaces) (latex//replace-regexp-everywhere "\n\n\n+" "\n\n")))
           ;; Autofill
+          (goto-char (point-max))
+          (setq has-final-linebreak (looking-at "^"))
           (goto-char (point-min))
           (when latex/cleanup-do-fill
             (let* ((size (number-to-string (length (number-to-string (line-number-at-pos (point-max))))))
@@ -617,6 +620,9 @@ It decides where to act in the following way:
                              (forward-line 1))
                     (latex/end-of-environment 1)))
                 (message message-string (line-number-at-pos (point)) (line-number-at-pos (point-max))))))
+          (when (and (looking-at "^")
+                     (not has-final-linebreak))
+            (delete-char -1))
           ;; Indentation
           (message "Indenting...")
           (goto-char (point-min))
