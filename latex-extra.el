@@ -162,7 +162,11 @@
 
 (defvar latex-extra-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map [tab] #'latex/hide-show)
+    (define-key map "\C-i"
+      '(menu-item "maybe-latex/hide-show" nil :filter
+                  (lambda (&rest _)
+                    (when (latex//header-at-point)
+                      #'latex/hide-show))))
     (define-key map [backtab] #'latex/hide-show-all)
     (define-key map "" #'latex/next-section)
     (define-key map "" #'latex/up-section)
@@ -475,15 +479,10 @@ determined by the positivity of N.
 (defun latex/hide-show ()
   "Hide or show current header and its contents."
   (interactive)
-  (if (latex//header-at-point)
-      (if (null (eq last-command 'latex/hide-show))
-          (with-no-warnings (hide-leaves))
-        (with-no-warnings (show-subtree))
-        (setq this-command nil))
-    (when (eq last-command-event 'tab)
-      (define-key latex-extra-mode-map [tab] nil)
-      (call-interactively (key-binding "\t" :accept-default))
-      (define-key latex-extra-mode-map [tab] 'latex/hide-show))))
+  (if (not (eq last-command 'latex/hide-show))
+      (with-no-warnings (hide-leaves))
+    (with-no-warnings (show-subtree))
+    (setq this-command nil)))
 
 (defun latex/hide-show-all ()
   "Hide or show the contents of all headers."
