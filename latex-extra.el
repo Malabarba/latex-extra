@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
 ;; URL: http://github.com/Malabarba/latex-extra
-;; Version: 1.12
+;; Version: 1.13
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1") (cl-lib "0.5"))
 ;;
@@ -598,7 +598,7 @@ It decides where to act in the following way:
           (when latex/clean-up-whitespace
             (message "Cleaning up...")
             (unless (eq latex/clean-up-whitespace 'lines)  (latex//replace-regexp-everywhere "  +$" ""))
-            (unless (eq latex/clean-up-whitespace 'lines)  (latex//replace-regexp-everywhere "  +\\([^% ]\\)" " \\1"))
+            (unless (eq latex/clean-up-whitespace 'lines)  (latex//replace-regexp-everywhere "\\([^.]\\)  +\\([^% ]\\)" "\\1 \\2"))
             (unless (eq latex/clean-up-whitespace 'spaces) (latex//replace-regexp-everywhere "\n\n\n+" "\n\n")))
           ;; Autofill
           (goto-char (point-max))
