@@ -5,6 +5,7 @@
 ;; Author: Artur Malabarba <artur@endlessparentheses.com>
 ;; URL: http://github.com/Malabarba/latex-extra
 ;; Version: 1.13
+;; License: GNU General Public License v3 or newer
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1") (cl-lib "0.5"))
 ;;
