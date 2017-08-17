@@ -1,8 +1,8 @@
 ;;; latex-extra.el --- Adds several useful functionalities to LaTeX-mode.
 
-;; Copyright (C) 2013 Artur Malabarba <bruce.connor.am@gmail.com>
+;; Copyright (C) 2013, 2017 Artur Malabarba <artur@endlessparentheses.com>
 
-;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
+;; Author: Artur Malabarba <artur@endlessparentheses.com>
 ;; URL: http://github.com/Malabarba/latex-extra
 ;; Version: 1.13
 ;; Keywords: tex
