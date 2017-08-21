@@ -1,4 +1,4 @@
-latex-extra [![Build Status](https://travis-ci.org/Bruce-Connor/latex-extra.svg?branch=master)](https://travis-ci.org/Bruce-Connor/latex-extra)
+latex-extra [![Build Status](https://travis-ci.org/Malabarba/latex-extra.svg?branch=master)](https://travis-ci.org/Malabarba/latex-extra)
 =======
 
 Defines extra commands and keys for LaTeX-mode. To activate, install
