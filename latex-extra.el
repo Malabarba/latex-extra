@@ -129,7 +129,8 @@
 
 (require 'tex)
 (require 'latex)
-(require 'tex-buf)
+(unless (string-prefix-p "13" AUCTeX-version)
+  (require 'tex-buf))
 (require 'texmathp)
 (require 'cl-lib)
 (require 'outline)
