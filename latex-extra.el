@@ -129,7 +129,7 @@
 
 (require 'tex)
 (require 'latex)
-(unless (string-prefix-p "13" AUCTeX-version)
+(if (< (string-to-number (substring AUCTeX-version 0 2)) 13)
   (require 'tex-buf))
 (require 'texmathp)
 (require 'cl-lib)
